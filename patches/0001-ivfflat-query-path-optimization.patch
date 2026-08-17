@@ -1,0 +1,1292 @@
+diff --git a/contrib/pgvector/Makefile b/contrib/pgvector/Makefile
+index 76a004b3c20a9ec1f3b097572928a1c814acd6ff..88dcdd3b292ccc09b0819d02114a0841d9462e52 100644
+--- a/contrib/pgvector/Makefile
++++ b/contrib/pgvector/Makefile
+@@ -30,7 +30,8 @@ endif
+ # For auto-vectorization:
+ # - GCC (needs -ftree-vectorize OR -O3) - https://gcc.gnu.org/projects/tree-ssa/vectorization.html
+ # - Clang (could use pragma instead) - https://llvm.org/docs/Vectorizers.html
+-PG_CFLAGS += $(OPTFLAGS) -ftree-vectorize -fassociative-math -fno-signed-zeros -fno-trapping-math
++PGVECTOR_CFLAGS = $(OPTFLAGS) -ftree-vectorize -fassociative-math -fno-signed-zeros -fno-trapping-math
++PG_CFLAGS += $(PGVECTOR_CFLAGS)
+ 
+ # Debug GCC auto-vectorization
+ # PG_CFLAGS += -fopt-info-vec
+@@ -58,6 +59,9 @@ subdir = contrib/pgstattuple
+ top_builddir = ../..
+ include $(top_builddir)/src/Makefile.global
+ include $(top_srcdir)/contrib/contrib-global.mk
++
++# OpenTenBase's in-tree build does not consume PG_CFLAGS
++override CFLAGS += $(PGVECTOR_CFLAGS)
+ endif
+ 
+ # for Mac
+diff --git a/contrib/pgvector/bench/README.md b/contrib/pgvector/bench/README.md
+index 19dc9f20ba3410c8d320b7e41529081233f34da1..982f0cd439c43191fbf48f73858c84d110a0f7c1 100644
+--- a/contrib/pgvector/bench/README.md
++++ b/contrib/pgvector/bench/README.md
+@@ -37,6 +37,78 @@ METRICS=cosine ROWS=100000 DIMS=384 LISTS=100 PROBES_LIST="1 4 10 32 100" \
+   bench/run_ivfflat_benchmark.sh
+ ```
+ 
++Measure IVFFlat rescan memory in one backend:
++
++```bash
++ITEM_ROWS=1000 DIMS=128 RESCANS=50000 LISTS=20 PROBES=1 \
++  bench/run_ivfflat_rescan_memory.sh
++```
++
++Compare high-probes query sort settings with five ABBA-ordered repetitions and
++verify exact top-10 equivalence:
++
++```bash
++PGHOST=127.0.0.1 PGPORT=22301 PGUSER=otbtest DBNAME=ivfflat_test \
++  WORK_MEM=4MB QUERY_WORK_MEM=64MB PROBES=1000 REPETITIONS=5 \
++  bench/run_ivfflat_high_probes.sh
++```
++
++The dataset must contain `profile_items(id, embedding)` and
++`profile_queries(id, embedding)`, with 100,000 items, 200 queries, and a
++Cosine IVFFlat index named `profile_items_cos_idx` built with `lists=1000`.
++The harness records complete `EXPLAIN (ANALYZE, BUFFERS)` plans and an
++`aggregate.csv` file. Its correctness pass compares the full-probes IVFFlat
++top-10 sets against an exact sequential-scan reference.
++
++For a controlled compiler-vectorization ablation, a database administrator can
++alternate two previously built `vector.so` files in the same test cluster:
++
++```bash
++SCALAR_LIBRARY=/path/to/scalar/vector.so \
++VECTORIZED_LIBRARY=/path/to/vectorized/vector.so \
++ALLOW_LIBRARY_SWAP=true REPETITIONS=5 \
++  bench/run_ivfflat_simd_ablation.sh
++```
++
++This administrative harness temporarily replaces the installed `vector.so`
++for new benchmark backends and restores the original file on exit. Run it only
++on an isolated test cluster after verifying `ACTIVE_LIBRARY`; do not use it on
++a production server.
++
++On Linux, capture a CPU profile of the same high-probes workload with:
++
++```bash
++PGHOST=127.0.0.1 PGPORT=22301 PGUSER=otbtest DBNAME=ivfflat_test \
++  WORK_MEM=4MB QUERY_WORK_MEM=0 PROBES=1000 \
++  bench/run_ivfflat_perf_profile.sh
++```
++
++The profiling harness requires `perf` permission for the query backend. It
++stores the complete plan, `perf.data`, symbol reports, and unfolded stack data
++under a timestamped result directory.
++
++For OpenTenBase, connect directly to the Datanode that executes the scan so
++the plan exposes the inner index loops and `/proc` samples the correct backend.
++Create the extension through the Coordinator first, then use:
++
++```bash
++PGHOST=127.0.0.1 PGPORT=22301 PGUSER=otbtest DBNAME=ivfflat_test \
++  CREATE_EXTENSION=false OPENTENBASE_CN_PORT=22201 RESCANS=1000 \
++  bench/run_ivfflat_rescan_memory.sh
++```
++
++When `OPENTENBASE_CN_PORT` is set, the harness creates replicated benchmark
++tables through that Coordinator, samples the backend reached through `PGPORT`,
++and removes the benchmark tables through the Coordinator on exit. Do not run
++multiple external-setup instances concurrently in the same database.
++
++For a short smoke run, reduce `RESCANS` to `1000`. The rescan harness uses
++temporary tables so the indexed nested-loop work stays in the backend selected
++by `PGHOST`, `PGPORT`, and `PGUSER`. It samples that backend's Linux `/proc`
++memory counters while a single `EXPLAIN ANALYZE` query is running. The command
++fails unless the plan proves both an IVFFlat index scan and more than one index
++loop.
++
+ Load the recommendation helper:
+ 
+ ```bash
+@@ -88,6 +160,28 @@ bench/results/ivfflat_benchmark_<timestamp>_plans.txt
+ | `OUTPUT` | auto-generated | CSV output path |
+ | `PLAN_OUTPUT` | derived from `OUTPUT` | EXPLAIN plan output path |
+ 
++The rescan memory harness additionally accepts `CREATE_EXTENSION`,
++`OPENTENBASE_CN_PORT`, `ITEM_ROWS`, `RESCANS`,
++`SAMPLE_INTERVAL`, `STARTUP_DELAY`, `RUN_ID`, `RESULT_DIR`, `SAMPLES_OUTPUT`,
++and `SUMMARY_OUTPUT`. Its defaults are intended for development evidence, not
++as a universal production workload.
++
++## Query sort memory
++
++IVFFlat sorts candidate tuples before returning ordered results. Large `probes`
++values can spill this sort to temporary files when `work_mem` is small. Set
++`ivfflat.query_work_mem` for a session or transaction to give only IVFFlat
++query sorts a larger budget:
++
++```sql
++SET LOCAL ivfflat.query_work_mem = '64MB';
++```
++
++The default is `0`, which preserves the standard behavior and uses `work_mem`.
++Each active IVFFlat scan can consume up to the configured amount, so increase
++it only after checking concurrent scan counts and `EXPLAIN (ANALYZE, BUFFERS)`
++temporary-block usage.
++
+ ## Metrics
+ 
+ The report contains:
+@@ -97,6 +191,14 @@ The report contains:
+ - `recall_at_k`: average overlap between exact top-k results and IVFFlat top-k
+ - `exact_avg_latency_ms`: average exact scan latency with index scans disabled
+ 
++The rescan harness writes three separate evidence files:
++
++- `*_rss.csv`: time-series `VmRSS`, `RssAnon`, and `VmSize` readings for the
++  query backend
++- `*_summary.csv`: run parameters, RSS start/peak/end values, process status,
++  IVFFlat plan status, and observed index loop count
++- `*_plan.txt`: complete setup output and `EXPLAIN (ANALYZE, BUFFERS)` plan
++
+ Recall is calculated as:
+ 
+ ```text
+@@ -135,3 +237,7 @@ Heuristic results are starting points, not production guarantees.
+   for DML statements in distributed execution.
+ - Use this benchmark to compare commits, parameter settings, and hardware. Do
+   not use a single run as a universal performance claim.
++- RSS is an operating-system observation and may include allocator retention.
++  Compare repeated baseline and patched runs on the same host, and use the RSS
++  growth trend together with the plan loop count rather than interpreting one
++  endpoint in isolation.
+diff --git a/contrib/pgvector/src/ivfflat.c b/contrib/pgvector/src/ivfflat.c
+index d4054e7a0113ab03072ad53e2416b76185ccbe22..73ed5c0c71021e5563b8aec2c042303d77f019e9 100644
+--- a/contrib/pgvector/src/ivfflat.c
++++ b/contrib/pgvector/src/ivfflat.c
+@@ -20,6 +20,7 @@
+ int			ivfflat_probes;
+ int			ivfflat_iterative_scan;
+ int			ivfflat_max_probes;
++int			ivfflat_query_work_mem;
+ static relopt_kind ivfflat_relopt_kind;
+ 
+ static const struct config_enum_entry ivfflat_iterative_scan_options[] = {
+@@ -43,6 +44,10 @@ IvfflatInit(void)
+ 							"Valid range is 1..lists.", &ivfflat_probes,
+ 							IVFFLAT_DEFAULT_PROBES, IVFFLAT_MIN_LISTS, IVFFLAT_MAX_LISTS, PGC_USERSET, 0, NULL, NULL, NULL);
+ 
++	DefineCustomIntVariable("ivfflat.query_work_mem", "Sets the memory available to IVFFlat query sorts",
++							"Zero uses work_mem.", &ivfflat_query_work_mem,
++							0, 0, MAX_KILOBYTES, PGC_USERSET, GUC_UNIT_KB, NULL, NULL, NULL);
++
+ 	DefineCustomEnumVariable("ivfflat.iterative_scan", "Sets the mode for iterative scans",
+ 							 NULL, &ivfflat_iterative_scan,
+ 							 IVFFLAT_ITERATIVE_SCAN_OFF, ivfflat_iterative_scan_options, PGC_USERSET, 0, NULL, NULL, NULL);
+diff --git a/contrib/pgvector/src/ivfflat.h b/contrib/pgvector/src/ivfflat.h
+index 30f1ac1e67fb3639aebd8414d1ab5773a0741c76..c1eb6ce88df812db3d8e34f91256ebb149a1f97d 100644
+--- a/contrib/pgvector/src/ivfflat.h
++++ b/contrib/pgvector/src/ivfflat.h
+@@ -85,6 +85,7 @@
+ extern int	ivfflat_probes;
+ extern int	ivfflat_iterative_scan;
+ extern int	ivfflat_max_probes;
++extern int	ivfflat_query_work_mem;
+ 
+ typedef enum IvfflatIterativeScanMode
+ {
+diff --git a/contrib/pgvector/src/ivfscan.c b/contrib/pgvector/src/ivfscan.c
+index 5e1f6d8f76beec3f0c8cd6de664a1f63636cdd87..e0b2cfac62ffd039c49f806cb6a50f8cbe363508 100644
+--- a/contrib/pgvector/src/ivfscan.c
++++ b/contrib/pgvector/src/ivfscan.c
+@@ -15,6 +15,8 @@
+ #define GetScanList(ptr) pairingheap_container(IvfflatScanList, ph_node, ptr)
+ #define GetScanListConst(ptr) pairingheap_const_container(IvfflatScanList, ph_node, ptr)
+ 
++static Tuplesortstate *InitScanSortState(TupleDesc tupdesc);
++
+ /*
+  * Compare list distances
+  */
+@@ -116,6 +118,13 @@ GetScanItems(IndexScanDesc scan, Datum value)
+ 	TupleDesc	tupdesc = RelationGetDescr(scan->indexRelation);
+ 	TupleTableSlot *slot = so->vslot;
+ 	int			batchProbes = 0;
++	MemoryContext oldCtx;
++
++	/* OpenTenBase does not provide tuplesort_reset() */
++	tuplesort_end(so->sortstate);
++	oldCtx = MemoryContextSwitchTo(so->tmpCtx);
++	so->sortstate = InitScanSortState(so->tupdesc);
++	MemoryContextSwitchTo(oldCtx);
+ 
+ 	/* Search closest probes lists */
+ 	while (so->listIndex < so->maxProbes && (++batchProbes) <= so->probes)
+@@ -229,9 +238,10 @@ InitScanSortState(TupleDesc tupdesc)
+ 	Oid			sortOperators[] = {Float8LessOperator};
+ 	Oid			sortCollations[] = {InvalidOid};
+ 	bool		nullsFirstFlags[] = {false};
++	int			sortWorkMem = ivfflat_query_work_mem > 0 ? ivfflat_query_work_mem : work_mem;
+ 
+ 	return tuplesort_begin_heap(tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags,
+-	                            work_mem, false);
++	                            sortWorkMem, false);
+ }
+ 
+ /*
+@@ -270,6 +280,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
+ 	so->probes = probes;
+ 	so->maxProbes = maxProbes;
+ 	so->dimensions = dimensions;
++	so->value = PointerGetDatum(NULL);
+ 
+ 	/* Set support functions */
+ 	so->procinfo = index_getprocinfo(index, 1, IVFFLAT_DISTANCE_PROC);
+@@ -325,6 +336,12 @@ ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int
+ 	pairingheap_reset(so->listQueue);
+ 	so->listIndex = 0;
+ 
++	if (so->normprocinfo != NULL && DatumGetPointer(so->value) != NULL)
++	{
++		pfree(DatumGetPointer(so->value));
++		so->value = PointerGetDatum(NULL);
++	}
++
+ 	if (keys && scan->numberOfKeys > 0)
+ 		memmove(scan->keyData, keys, scan->numberOfKeys * sizeof(ScanKeyData));
+ 
+diff --git a/contrib/pgvector/test/expected/ivfflat_vector.out b/contrib/pgvector/test/expected/ivfflat_vector.out
+index 1c78d7fdce9776ec0745968cfe8ce94cc368d21b..aaa3094111346da4910fe3c769d135e810ec60b4 100644
+--- a/contrib/pgvector/test/expected/ivfflat_vector.out
++++ b/contrib/pgvector/test/expected/ivfflat_vector.out
+@@ -3,6 +3,9 @@ SET enable_seqscan = off;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -26,7 +29,7 @@ SELECT COUNT(*) FROM t;
+ (1 row)
+ 
+ TRUNCATE t;
+-NOTICE:  ivfflat index created with little data
++NOTICE:  (00000) ivfflat index created with little data
+ DETAIL:  This will cause low recall.
+ HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+@@ -39,6 +42,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_ip_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <#> '[3,3,3]';
+    val   
+@@ -60,6 +66,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_cosine_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+    val   
+@@ -81,11 +90,26 @@ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2
+      3
+ (1 row)
+ 
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++query_val|nearest_v
++[1,1,1]|[1,1,1]
++[1,2,3]|[1,2,3]
++[1,2,4]|[1,2,4]
++(3 rows)
++\pset format aligned
+ DROP TABLE t;
+ -- iterative
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 3);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SET ivfflat.iterative_scan = relaxed_order;
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -117,6 +141,9 @@ DROP TABLE t;
+ CREATE UNLOGGED TABLE t (val vector(3));
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+ ---------
+@@ -129,10 +156,10 @@ DROP TABLE t;
+ -- options
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 0);
+-ERROR:  value 0 out of bounds for option "lists"
++ERROR:  (22023) value 0 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 32769);
+-ERROR:  value 32769 out of bounds for option "lists"
++ERROR:  (22023) value 32769 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ SHOW ivfflat.probes;
+  ivfflat.probes 
+@@ -141,9 +168,21 @@ SHOW ivfflat.probes;
+ (1 row)
+ 
+ SET ivfflat.probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
+ SET ivfflat.probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++\pset format unaligned
++SHOW ivfflat.query_work_mem;
++ivfflat.query_work_mem
++0
++(1 row)
++SET ivfflat.query_work_mem = '64MB';
++SHOW ivfflat.query_work_mem;
++ivfflat.query_work_mem
++64MB
++(1 row)
++RESET ivfflat.query_work_mem;
++\pset format aligned
+ SHOW ivfflat.iterative_scan;
+  ivfflat.iterative_scan 
+ ------------------------
+@@ -151,7 +190,7 @@ SHOW ivfflat.iterative_scan;
+ (1 row)
+ 
+ SET ivfflat.iterative_scan = on;
+-ERROR:  invalid value for parameter "ivfflat.iterative_scan": "on"
++ERROR:  (22023) invalid value for parameter "ivfflat.iterative_scan": "on"
+ HINT:  Available values: off, relaxed_order.
+ SHOW ivfflat.max_probes;
+  ivfflat.max_probes 
+@@ -160,7 +199,7 @@ SHOW ivfflat.max_probes;
+ (1 row)
+ 
+ SET ivfflat.max_probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ SET ivfflat.max_probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ DROP TABLE t;
+diff --git a/contrib/pgvector/test/sql/ivfflat_vector.sql b/contrib/pgvector/test/sql/ivfflat_vector.sql
+index 78dfd160433822206a92a58a230326ce853f7614..2b107913daf4dd0750ea413a881e0a8385faa90b 100644
+--- a/contrib/pgvector/test/sql/ivfflat_vector.sql
++++ b/contrib/pgvector/test/sql/ivfflat_vector.sql
+@@ -41,6 +41,13 @@ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> '[0,0,0]') t2;
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2;
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++\pset format aligned
+ 
+ DROP TABLE t;
+ 
+@@ -84,6 +91,13 @@ SHOW ivfflat.probes;
+ SET ivfflat.probes = 0;
+ SET ivfflat.probes = 32769;
+ 
++\pset format unaligned
++SHOW ivfflat.query_work_mem;
++SET ivfflat.query_work_mem = '64MB';
++SHOW ivfflat.query_work_mem;
++RESET ivfflat.query_work_mem;
++\pset format aligned
++
+ SHOW ivfflat.iterative_scan;
+ 
+ SET ivfflat.iterative_scan = on;
+diff --git a/contrib/pgvector/bench/ivfflat_rescan_memory.sql b/contrib/pgvector/bench/ivfflat_rescan_memory.sql
+new file mode 100644
+index 0000000..1af641f
+--- /dev/null
++++ b/contrib/pgvector/bench/ivfflat_rescan_memory.sql
+@@ -0,0 +1,63 @@
++\set ON_ERROR_STOP on
++\pset pager off
++
++\if :external_setup
++SELECT extversion AS vector_version
++FROM pg_extension
++WHERE extname = 'vector';
++\else
++\if :create_extension
++CREATE EXTENSION IF NOT EXISTS vector;
++\else
++SELECT extversion AS vector_version
++FROM pg_extension
++WHERE extname = 'vector';
++\endif
++
++CREATE TEMP TABLE rescan_items (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++);
++
++CREATE TEMP TABLE rescan_queries (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++);
++
++\copy rescan_items(id, embedding) FROM '__ITEMS_FILE__' WITH (FORMAT csv)
++\copy rescan_queries(id, embedding) FROM '__QUERIES_FILE__' WITH (FORMAT csv)
++
++CREATE INDEX rescan_items_ivfflat_idx
++ON rescan_items
++USING ivfflat (embedding vector_cosine_ops)
++WITH (lists = __LISTS__);
++
++ANALYZE rescan_items;
++ANALYZE rescan_queries;
++\endif
++
++SET enable_seqscan = off;
++SET enable_bitmapscan = off;
++SET ivfflat.probes = __PROBES__;
++
++\pset tuples_only on
++\pset format unaligned
++\o __PID_FILE__
++SELECT pg_backend_pid();
++\o
++\pset tuples_only off
++\pset format aligned
++
++SELECT pg_sleep(__STARTUP_DELAY__);
++
++EXPLAIN (ANALYZE, BUFFERS, COSTS OFF, SUMMARY ON)
++SELECT sum(nn.id::bigint)
++FROM rescan_queries q
++CROSS JOIN LATERAL (
++    SELECT i.id
++    FROM rescan_items i
++    ORDER BY i.embedding <=> q.embedding
++    LIMIT 1
++) nn;
++
++SELECT pg_sleep(__STARTUP_DELAY__);
+diff --git a/contrib/pgvector/bench/ivfflat_rescan_setup.sql b/contrib/pgvector/bench/ivfflat_rescan_setup.sql
+new file mode 100644
+index 0000000..362c472
+--- /dev/null
++++ b/contrib/pgvector/bench/ivfflat_rescan_setup.sql
+@@ -0,0 +1,28 @@
++\set ON_ERROR_STOP on
++\pset pager off
++
++CREATE EXTENSION IF NOT EXISTS vector;
++
++DROP TABLE IF EXISTS rescan_queries;
++DROP TABLE IF EXISTS rescan_items;
++
++CREATE TABLE rescan_items (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++) DISTRIBUTE BY REPLICATION;
++
++CREATE TABLE rescan_queries (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++) DISTRIBUTE BY REPLICATION;
++
++\copy rescan_items(id, embedding) FROM '__ITEMS_FILE__' WITH (FORMAT csv)
++\copy rescan_queries(id, embedding) FROM '__QUERIES_FILE__' WITH (FORMAT csv)
++
++CREATE INDEX rescan_items_ivfflat_idx
++ON rescan_items
++USING ivfflat (embedding vector_cosine_ops)
++WITH (lists = __LISTS__);
++
++ANALYZE rescan_items;
++ANALYZE rescan_queries;
+diff --git a/contrib/pgvector/bench/run_ivfflat_rescan_memory.sh b/contrib/pgvector/bench/run_ivfflat_rescan_memory.sh
+new file mode 100755
+index 0000000..b2a010c
+--- /dev/null
++++ b/contrib/pgvector/bench/run_ivfflat_rescan_memory.sh
+@@ -0,0 +1,256 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++RESULT_DIR="${RESULT_DIR:-${SCRIPT_DIR}/results}"
++
++DBNAME="${DBNAME:-postgres}"
++CREATE_EXTENSION="${CREATE_EXTENSION:-true}"
++OPENTENBASE_CN_PORT="${OPENTENBASE_CN_PORT:-}"
++ITEM_ROWS="${ITEM_ROWS:-1000}"
++DIMS="${DIMS:-128}"
++RESCANS="${RESCANS:-50000}"
++LISTS="${LISTS:-20}"
++PROBES="${PROBES:-1}"
++SAMPLE_INTERVAL="${SAMPLE_INTERVAL:-0.10}"
++STARTUP_DELAY="${STARTUP_DELAY:-2}"
++RUN_ID="${RUN_ID:-ivfflat_rescan_$(date +%Y%m%d_%H%M%S)}"
++SAMPLES_OUTPUT="${SAMPLES_OUTPUT:-${RESULT_DIR}/${RUN_ID}_rss.csv}"
++SUMMARY_OUTPUT="${SUMMARY_OUTPUT:-${RESULT_DIR}/${RUN_ID}_summary.csv}"
++PLAN_OUTPUT="${PLAN_OUTPUT:-${RESULT_DIR}/${RUN_ID}_plan.txt}"
++SETUP_OUTPUT="${SETUP_OUTPUT:-${RESULT_DIR}/${RUN_ID}_setup.txt}"
++
++TMP_DIR="$(mktemp -d)"
++ITEMS_FILE="${TMP_DIR}/items.csv"
++QUERIES_FILE="${TMP_DIR}/queries.csv"
++PID_FILE="${TMP_DIR}/backend.pid"
++SQL_FILE="${TMP_DIR}/rescan.sql"
++SETUP_SQL_FILE="${TMP_DIR}/setup.sql"
++CLIENT_PID=""
++EXTERNAL_SETUP=false
++SETUP_DONE=false
++
++cleanup() {
++	if [ -n "$CLIENT_PID" ] && kill -0 "$CLIENT_PID" 2>/dev/null; then
++		kill "$CLIENT_PID" 2>/dev/null || true
++	fi
++	if [ "$SETUP_DONE" = true ]; then
++		psql -X -v ON_ERROR_STOP=1 -p "$OPENTENBASE_CN_PORT" -d "$DBNAME" \
++			-c "DROP TABLE IF EXISTS rescan_queries; DROP TABLE IF EXISTS rescan_items;" \
++			>> "$SETUP_OUTPUT" 2>&1 || true
++	fi
++	rm -rf "$TMP_DIR"
++}
++trap cleanup EXIT INT TERM
++
++require_positive_integer() {
++	local name="$1"
++	local value="$2"
++
++	case "$value" in
++		''|*[!0-9]*)
++			echo "${name} must be a positive integer: ${value}" >&2
++			exit 2
++			;;
++	esac
++
++	if [ "$value" -le 0 ]; then
++		echo "${name} must be greater than zero: ${value}" >&2
++		exit 2
++	fi
++}
++
++generate_vectors() {
++	local count="$1"
++	local dim="$2"
++	local seed="$3"
++	local output_file="$4"
++
++	awk -v count="$count" -v dim="$dim" -v seed="$seed" '
++		BEGIN {
++			srand(seed)
++			for (i = 1; i <= count; i++) {
++				printf "%d,\"[", i
++				for (j = 1; j <= dim; j++) {
++					if (j > 1)
++						printf ","
++					printf "%.8f", rand() + 0.000001
++				}
++				printf "]\"\n"
++			}
++		}
++	' > "$output_file"
++}
++
++read_status_kb() {
++	local status_content="$1"
++	local key="$2"
++
++	awk -v key="${key}:" '$1 == key { print $2; found = 1; exit } END { if (!found) print 0 }' \
++		<<< "$status_content"
++}
++
++for setting in \
++	"ITEM_ROWS:$ITEM_ROWS" \
++	"DIMS:$DIMS" \
++	"RESCANS:$RESCANS" \
++	"LISTS:$LISTS" \
++	"PROBES:$PROBES"
++do
++	require_positive_integer "${setting%%:*}" "${setting#*:}"
++done
++
++case "$CREATE_EXTENSION" in
++	true|false)
++		;;
++	*)
++		echo "CREATE_EXTENSION must be true or false: ${CREATE_EXTENSION}" >&2
++		exit 2
++		;;
++esac
++
++if [ -n "$OPENTENBASE_CN_PORT" ]; then
++	require_positive_integer "OPENTENBASE_CN_PORT" "$OPENTENBASE_CN_PORT"
++	EXTERNAL_SETUP=true
++fi
++
++if [ "$LISTS" -gt "$ITEM_ROWS" ]; then
++	echo "LISTS cannot be greater than ITEM_ROWS" >&2
++	exit 2
++fi
++
++mkdir -p "$RESULT_DIR"
++generate_vectors "$ITEM_ROWS" "$DIMS" 17 "$ITEMS_FILE"
++generate_vectors "$RESCANS" "$DIMS" 97 "$QUERIES_FILE"
++chmod 755 "$TMP_DIR"
++chmod 644 "$ITEMS_FILE" "$QUERIES_FILE"
++
++sed \
++	-e "s#__ITEMS_FILE__#${ITEMS_FILE}#g" \
++	-e "s#__QUERIES_FILE__#${QUERIES_FILE}#g" \
++	-e "s#__PID_FILE__#${PID_FILE}#g" \
++	-e "s#__DIMS__#${DIMS}#g" \
++	-e "s#__LISTS__#${LISTS}#g" \
++	-e "s#__PROBES__#${PROBES}#g" \
++	-e "s#__STARTUP_DELAY__#${STARTUP_DELAY}#g" \
++	"${SCRIPT_DIR}/ivfflat_rescan_memory.sql" > "$SQL_FILE"
++
++if [ "$EXTERNAL_SETUP" = true ]; then
++	sed \
++		-e "s#__ITEMS_FILE__#${ITEMS_FILE}#g" \
++		-e "s#__QUERIES_FILE__#${QUERIES_FILE}#g" \
++		-e "s#__DIMS__#${DIMS}#g" \
++		-e "s#__LISTS__#${LISTS}#g" \
++		"${SCRIPT_DIR}/ivfflat_rescan_setup.sql" > "$SETUP_SQL_FILE"
++
++	SETUP_DONE=true
++	psql -X -v ON_ERROR_STOP=1 -p "$OPENTENBASE_CN_PORT" -d "$DBNAME" \
++		-f "$SETUP_SQL_FILE" > "$SETUP_OUTPUT" 2>&1
++fi
++
++psql -X -v ON_ERROR_STOP=1 -v create_extension="$CREATE_EXTENSION" \
++	-v external_setup="$EXTERNAL_SETUP" \
++	-d "$DBNAME" -f "$SQL_FILE" > "$PLAN_OUTPUT" 2>&1 &
++CLIENT_PID=$!
++
++for _ in $(seq 1 300); do
++	if [ -s "$PID_FILE" ]; then
++		break
++	fi
++	if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
++		break
++	fi
++	sleep 0.1
++done
++
++BACKEND_PID="$(awk 'NF { print $1; exit }' "$PID_FILE" 2>/dev/null || true)"
++if ! [[ "$BACKEND_PID" =~ ^[0-9]+$ ]] || [ ! -r "/proc/${BACKEND_PID}/status" ]; then
++	set +e
++	wait "$CLIENT_PID"
++	CLIENT_STATUS=$?
++	set -e
++	CLIENT_PID=""
++	echo "could not resolve the benchmark backend PID (psql exit ${CLIENT_STATUS})" >&2
++	exit 1
++fi
++
++printf '%s\n' "sample,elapsed_ms,backend_pid,vm_rss_kb,rss_anon_kb,vm_size_kb" > "$SAMPLES_OUTPUT"
++START_NS="$(date +%s%N)"
++SAMPLE=0
++
++while kill -0 "$CLIENT_PID" 2>/dev/null && [ -r "/proc/${BACKEND_PID}/status" ]; do
++	if ! STATUS_CONTENT="$(cat "/proc/${BACKEND_PID}/status" 2>/dev/null)"; then
++		break
++	fi
++	NOW_NS="$(date +%s%N)"
++	ELAPSED_MS=$(((NOW_NS - START_NS) / 1000000))
++	VM_RSS="$(read_status_kb "$STATUS_CONTENT" VmRSS)"
++	RSS_ANON="$(read_status_kb "$STATUS_CONTENT" RssAnon)"
++	VM_SIZE="$(read_status_kb "$STATUS_CONTENT" VmSize)"
++	printf '%s,%s,%s,%s,%s,%s\n' \
++		"$SAMPLE" "$ELAPSED_MS" "$BACKEND_PID" "$VM_RSS" "$RSS_ANON" "$VM_SIZE" >> "$SAMPLES_OUTPUT"
++	SAMPLE=$((SAMPLE + 1))
++	sleep "$SAMPLE_INTERVAL"
++done
++
++set +e
++wait "$CLIENT_PID"
++CLIENT_STATUS=$?
++set -e
++CLIENT_PID=""
++
++PLAN_USES_IVFFLAT=false
++if grep -Eq 'Index Scan using rescan_items_ivfflat_idx' "$PLAN_OUTPUT"; then
++	PLAN_USES_IVFFLAT=true
++fi
++
++OBSERVED_INDEX_LOOPS="$(
++	grep -E 'Index Scan using rescan_items_ivfflat_idx.*loops=[0-9]+' "$PLAN_OUTPUT" |
++		sed -E 's/.*loops=([0-9]+).*/\1/' |
++		sort -nr |
++		head -n 1 || true
++)"
++OBSERVED_INDEX_LOOPS="${OBSERVED_INDEX_LOOPS:-0}"
++
++read -r SAMPLE_COUNT RSS_START RSS_PEAK RSS_END RSS_DELTA <<EOF
++$(awk -F, '
++	NR == 2 { start = $4; peak = $4 }
++	NR > 1 {
++		end = $4
++		if ($4 > peak)
++			peak = $4
++		count++
++	}
++	END {
++		if (count == 0)
++			print "0 0 0 0 0"
++		else
++			printf "%d %d %d %d %d\n", count, start, peak, end, end - start
++	}
++' "$SAMPLES_OUTPUT")
++EOF
++
++printf '%s\n' \
++	"run_id,item_rows,dims,rescans,lists,probes,samples,backend_pid,rss_start_kb,rss_peak_kb,rss_end_kb,rss_delta_kb,query_exit_code,plan_uses_ivfflat,observed_index_loops,external_setup,setup_port" \
++	> "$SUMMARY_OUTPUT"
++printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
++	"$RUN_ID" "$ITEM_ROWS" "$DIMS" "$RESCANS" "$LISTS" "$PROBES" "$SAMPLE_COUNT" \
++	"$BACKEND_PID" "$RSS_START" "$RSS_PEAK" "$RSS_END" "$RSS_DELTA" "$CLIENT_STATUS" \
++	"$PLAN_USES_IVFFLAT" "$OBSERVED_INDEX_LOOPS" "$EXTERNAL_SETUP" "$OPENTENBASE_CN_PORT" >> "$SUMMARY_OUTPUT"
++
++echo "samples: $SAMPLES_OUTPUT"
++echo "summary: $SUMMARY_OUTPUT"
++echo "plan: $PLAN_OUTPUT"
++if [ "$EXTERNAL_SETUP" = true ]; then
++	echo "setup: $SETUP_OUTPUT"
++fi
++
++if [ "$CLIENT_STATUS" -ne 0 ]; then
++	echo "rescan query failed with exit code ${CLIENT_STATUS}" >&2
++	exit "$CLIENT_STATUS"
++fi
++
++if [ "$PLAN_USES_IVFFLAT" != true ] || [ "$OBSERVED_INDEX_LOOPS" -le 1 ]; then
++	echo "plan did not prove a repeated IVFFlat index rescan" >&2
++	exit 1
++fi
+diff --git a/contrib/pgvector/bench/run_ivfflat_high_probes.sh b/contrib/pgvector/bench/run_ivfflat_high_probes.sh
+new file mode 100755
+index 0000000..8538bf3
+--- /dev/null
++++ b/contrib/pgvector/bench/run_ivfflat_high_probes.sh
+@@ -0,0 +1,216 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++RESULT_DIR="${RESULT_DIR:-${SCRIPT_DIR}/results/ivfflat_high_probes_$(date +%Y%m%d_%H%M%S)}"
++
++DBNAME="${DBNAME:-ivfflat_test}"
++WORK_MEM="${WORK_MEM:-4MB}"
++QUERY_WORK_MEM="${QUERY_WORK_MEM:-64MB}"
++PROBES="${PROBES:-1000}"
++REPETITIONS="${REPETITIONS:-5}"
++PROFILE_ITEMS="${PROFILE_ITEMS:-profile_items}"
++PROFILE_QUERIES="${PROFILE_QUERIES:-profile_queries}"
++RUN_CORRECTNESS="${RUN_CORRECTNESS:-true}"
++RUN_MATRIX="${RUN_MATRIX:-true}"
++
++PSQL=(psql -X -v ON_ERROR_STOP=1 -d "$DBNAME")
++AGGREGATE_OUTPUT="${RESULT_DIR}/aggregate.csv"
++CORRECTNESS_OUTPUT="${RESULT_DIR}/correctness.txt"
++
++require_positive_integer() {
++	local name="$1"
++	local value="$2"
++
++	case "$value" in
++		''|*[!0-9]*)
++			echo "${name} must be a positive integer: ${value}" >&2
++			exit 2
++			;;
++	esac
++
++	if [ "$value" -le 0 ]; then
++		echo "${name} must be greater than zero: ${value}" >&2
++		exit 2
++	fi
++}
++
++validate_identifier() {
++	local name="$1"
++	local value="$2"
++
++	if ! [[ "$value" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
++		echo "${name} must be an unqualified SQL identifier: ${value}" >&2
++		exit 2
++	fi
++}
++
++run_plan() {
++	local variant="$1"
++	local rep="$2"
++	local sort_mem="$3"
++	local output_dir="${RESULT_DIR}/${variant}"
++	local output_file="${output_dir}/${variant}_rep${rep}.txt"
++	local execution_time temp_read temp_written index_loops
++
++	mkdir -p "$output_dir"
++	"${PSQL[@]}" > "$output_file" <<SQL
++LOAD 'vector';
++SET work_mem = '${WORK_MEM}';
++SET max_parallel_workers_per_gather = 0;
++SET enable_seqscan = off;
++SET ivfflat.probes = ${PROBES};
++SET ivfflat.iterative_scan = off;
++SET ivfflat.query_work_mem = '${sort_mem}';
++EXPLAIN (ANALYZE, BUFFERS, COSTS OFF)
++SELECT count(*)
++FROM ${PROFILE_QUERIES} q
++CROSS JOIN LATERAL (
++	SELECT i.id
++	FROM ${PROFILE_ITEMS} i
++	ORDER BY i.embedding <=> q.embedding
++	LIMIT 10
++) nearest;
++SQL
++
++	execution_time="$(awk '/Execution Time:/ { print $(NF - 1); exit }' "$output_file")"
++	read -r temp_read temp_written < <(
++		awk '
++			/Buffers:.*temp read=/ {
++				for (i = 1; i <= NF; i++) {
++					if ($i ~ /^read=/) { split($i, a, "="); read = a[2] }
++					if ($i ~ /^written=/) { split($i, a, "="); written = a[2] }
++				}
++				exit
++			}
++			END { printf "%d %d\n", read + 0, written + 0 }
++		' "$output_file"
++	)
++	index_loops="$(
++		grep -E 'Index Scan using profile_items_cos_idx.*loops=[0-9]+' "$output_file" |
++			sed -E 's/.*loops=([0-9]+).*/\1/' | head -n 1
++	)"
++
++	if [ -z "$execution_time" ] || [ "${index_loops:-0}" -ne 200 ]; then
++		echo "invalid plan evidence in ${output_file}" >&2
++		exit 1
++	fi
++
++	printf '%s,%s,%s,%s,%s,%s\n' \
++		"$variant" "$rep" "$execution_time" "$temp_read" "$temp_written" "$index_loops" \
++		>> "$AGGREGATE_OUTPUT"
++}
++
++run_correctness() {
++	local exact_output="${RESULT_DIR}/exact_top10.csv"
++	local ivfflat_output="${RESULT_DIR}/ivfflat_top10.csv"
++	local exact_sorted="${RESULT_DIR}/exact_top10.sorted.csv"
++	local ivfflat_sorted="${RESULT_DIR}/ivfflat_top10.sorted.csv"
++	local exact_rows ivfflat_rows matching_rows differing_rows recall
++
++	"${PSQL[@]}" -qAt -F, > "$exact_output" <<SQL
++LOAD 'vector';
++SET work_mem = '${WORK_MEM}';
++SET max_parallel_workers_per_gather = 0;
++SET ivfflat.iterative_scan = off;
++SET enable_indexscan = off;
++SET enable_bitmapscan = off;
++SELECT q.id, nearest.id
++FROM ${PROFILE_QUERIES} q
++CROSS JOIN LATERAL (
++	SELECT i.id
++	FROM ${PROFILE_ITEMS} i
++	ORDER BY i.embedding <=> q.embedding
++	LIMIT 10
++) nearest;
++SQL
++
++	"${PSQL[@]}" -qAt -F, > "$ivfflat_output" <<SQL
++LOAD 'vector';
++SET work_mem = '${WORK_MEM}';
++SET max_parallel_workers_per_gather = 0;
++SET ivfflat.iterative_scan = off;
++SET enable_seqscan = off;
++SET enable_indexscan = on;
++SET ivfflat.probes = ${PROBES};
++SET ivfflat.query_work_mem = '${QUERY_WORK_MEM}';
++SELECT q.id, nearest.id
++FROM ${PROFILE_QUERIES} q
++CROSS JOIN LATERAL (
++	SELECT i.id
++	FROM ${PROFILE_ITEMS} i
++	ORDER BY i.embedding <=> q.embedding
++	LIMIT 10
++) nearest;
++SQL
++
++	LC_ALL=C sort "$exact_output" > "$exact_sorted"
++	LC_ALL=C sort "$ivfflat_output" > "$ivfflat_sorted"
++	exact_rows="$(wc -l < "$exact_sorted" | tr -d ' ')"
++	ivfflat_rows="$(wc -l < "$ivfflat_sorted" | tr -d ' ')"
++	matching_rows="$(LC_ALL=C comm -12 "$exact_sorted" "$ivfflat_sorted" | wc -l | tr -d ' ')"
++	differing_rows="$(LC_ALL=C comm -3 "$exact_sorted" "$ivfflat_sorted" | wc -l | tr -d ' ')"
++	recall="$(awk -v matches="$matching_rows" -v total="$exact_rows" \
++		'BEGIN { if (total == 0) print "0.000000"; else printf "%.6f\n", matches / total }')"
++	{
++		printf 'exact_rows=%s\n' "$exact_rows"
++		printf 'ivfflat_rows=%s\n' "$ivfflat_rows"
++		printf 'matching_rows=%s\n' "$matching_rows"
++		printf 'differing_rows=%s\n' "$differing_rows"
++		printf 'recall_at_10=%s\n' "$recall"
++	} > "$CORRECTNESS_OUTPUT"
++
++	if [ "$exact_rows" -ne 2000 ] || [ "$ivfflat_rows" -ne 2000 ] ||
++		[ "$matching_rows" -ne 2000 ] || [ "$differing_rows" -ne 0 ]; then
++		echo "top-10 correctness check failed; see ${CORRECTNESS_OUTPUT}" >&2
++		exit 1
++	fi
++}
++
++require_positive_integer "PROBES" "$PROBES"
++require_positive_integer "REPETITIONS" "$REPETITIONS"
++validate_identifier "PROFILE_ITEMS" "$PROFILE_ITEMS"
++validate_identifier "PROFILE_QUERIES" "$PROFILE_QUERIES"
++
++for setting in "RUN_MATRIX:${RUN_MATRIX}" "RUN_CORRECTNESS:${RUN_CORRECTNESS}"; do
++	case "${setting#*:}" in
++		true|false) ;;
++		*)
++			echo "${setting%%:*} must be true or false: ${setting#*:}" >&2
++			exit 2
++			;;
++	esac
++done
++
++if [ "$RUN_MATRIX" = false ] && [ "$RUN_CORRECTNESS" = false ]; then
++	echo "RUN_MATRIX and RUN_CORRECTNESS cannot both be false" >&2
++	exit 2
++fi
++
++mkdir -p "$RESULT_DIR"
++if [ "$RUN_MATRIX" = true ]; then
++	printf '%s\n' 'variant,rep,execution_time_ms,temp_read_blocks,temp_written_blocks,index_loops' \
++		> "$AGGREGATE_OUTPUT"
++
++	# ABBA order limits bias from temperature and cache drift without changing the workload.
++	for rep in $(seq 1 "$REPETITIONS"); do
++		if [ $((rep % 2)) -eq 1 ]; then
++			run_plan inherit_work_mem "$rep" 0
++			run_plan query_work_mem_64mb "$rep" "$QUERY_WORK_MEM"
++		else
++			run_plan query_work_mem_64mb "$rep" "$QUERY_WORK_MEM"
++			run_plan inherit_work_mem "$rep" 0
++		fi
++	done
++fi
++
++if [ "$RUN_CORRECTNESS" = true ]; then
++	run_correctness
++fi
++
++if [ "$RUN_MATRIX" = true ]; then
++	echo "aggregate: $AGGREGATE_OUTPUT"
++fi
++if [ "$RUN_CORRECTNESS" = true ]; then
++	echo "correctness: $CORRECTNESS_OUTPUT"
++fi
+diff --git a/contrib/pgvector/bench/run_ivfflat_simd_ablation.sh b/contrib/pgvector/bench/run_ivfflat_simd_ablation.sh
+new file mode 100755
+index 0000000..f2ca888
+--- /dev/null
++++ b/contrib/pgvector/bench/run_ivfflat_simd_ablation.sh
+@@ -0,0 +1,152 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++DBNAME="${DBNAME:-ivfflat_test}"
++WORK_MEM="${WORK_MEM:-4MB}"
++PROBES="${PROBES:-1000}"
++REPETITIONS="${REPETITIONS:-5}"
++PROFILE_ITEMS="${PROFILE_ITEMS:-profile_items}"
++PROFILE_QUERIES="${PROFILE_QUERIES:-profile_queries}"
++RESULT_DIR="${RESULT_DIR:-ivfflat_simd_ablation_$(date +%Y%m%d_%H%M%S)}"
++SCALAR_LIBRARY="${SCALAR_LIBRARY:-}"
++VECTORIZED_LIBRARY="${VECTORIZED_LIBRARY:-}"
++ACTIVE_LIBRARY="${ACTIVE_LIBRARY:-$(pg_config --pkglibdir)/vector.so}"
++ALLOW_LIBRARY_SWAP="${ALLOW_LIBRARY_SWAP:-false}"
++
++PSQL=(psql -X -v ON_ERROR_STOP=1 -d "$DBNAME")
++AGGREGATE_OUTPUT="${RESULT_DIR}/aggregate.csv"
++BACKUP_LIBRARY=""
++INITIAL_SHA256=""
++
++cleanup() {
++	if [ -n "$BACKUP_LIBRARY" ] && [ -f "$BACKUP_LIBRARY" ]; then
++		install -m 755 "$BACKUP_LIBRARY" "$ACTIVE_LIBRARY"
++		rm -f "$BACKUP_LIBRARY"
++	fi
++}
++trap cleanup EXIT INT TERM
++
++fail() {
++	echo "$*" >&2
++	exit 2
++}
++
++validate_identifier() {
++	local name="$1"
++	local value="$2"
++
++	[[ "$value" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] ||
++		fail "${name} must be an unqualified SQL identifier: ${value}"
++}
++
++activate_library() {
++	local source_library="$1"
++	install -m 755 "$source_library" "$ACTIVE_LIBRARY"
++}
++
++run_plan() {
++	local variant="$1"
++	local rep="$2"
++	local source_library="$3"
++	local output_dir="${RESULT_DIR}/${variant}"
++	local output_file="${output_dir}/${variant}_rep${rep}.txt"
++	local system_output="${output_dir}/${variant}_rep${rep}_system.txt"
++	local execution_time temp_read temp_written index_loops active_sha256
++
++	activate_library "$source_library"
++	active_sha256="$(sha256sum "$ACTIVE_LIBRARY" | awk '{ print $1 }')"
++	mkdir -p "$output_dir"
++	{
++		date -Is
++		cat /proc/loadavg
++		ps -eo pid,pcpu,pmem,comm --sort=-pcpu | sed -n '1,12p'
++	} > "$system_output"
++	"${PSQL[@]}" > "$output_file" <<SQL
++LOAD 'vector';
++SET work_mem = '${WORK_MEM}';
++SET max_parallel_workers_per_gather = 0;
++SET enable_seqscan = off;
++SET ivfflat.probes = ${PROBES};
++SET ivfflat.iterative_scan = off;
++EXPLAIN (ANALYZE, BUFFERS, COSTS OFF)
++SELECT count(*)
++FROM ${PROFILE_QUERIES} q
++CROSS JOIN LATERAL (
++	SELECT i.id
++	FROM ${PROFILE_ITEMS} i
++	ORDER BY i.embedding <=> q.embedding
++	LIMIT 10
++) nearest;
++SQL
++
++	execution_time="$(awk '/Execution Time:/ { print $(NF - 1); exit }' "$output_file")"
++	read -r temp_read temp_written < <(
++		awk '
++			/Buffers:.*temp read=/ {
++				for (i = 1; i <= NF; i++) {
++					if ($i ~ /^read=/) { split($i, a, "="); read = a[2] }
++					if ($i ~ /^written=/) { split($i, a, "="); written = a[2] }
++				}
++				exit
++			}
++			END { printf "%d %d\n", read + 0, written + 0 }
++		' "$output_file"
++	)
++	index_loops="$(
++		grep -E 'Index Scan using profile_items_cos_idx.*loops=[0-9]+' "$output_file" |
++			sed -E 's/.*loops=([0-9]+).*/\1/' | head -n 1
++	)"
++
++	if [ -z "$execution_time" ] || [ "${index_loops:-0}" -ne 200 ]; then
++		echo "invalid plan evidence in ${output_file}" >&2
++		exit 1
++	fi
++
++	printf '%s,%s,%s,%s,%s,%s,%s\n' \
++		"$variant" "$rep" "$active_sha256" "$execution_time" "$temp_read" \
++		"$temp_written" "$index_loops" >> "$AGGREGATE_OUTPUT"
++}
++
++[ "$ALLOW_LIBRARY_SWAP" = true ] ||
++	fail "set ALLOW_LIBRARY_SWAP=true after confirming ACTIVE_LIBRARY"
++[ -f "$SCALAR_LIBRARY" ] || fail "SCALAR_LIBRARY does not exist: ${SCALAR_LIBRARY}"
++[ -f "$VECTORIZED_LIBRARY" ] || fail "VECTORIZED_LIBRARY does not exist: ${VECTORIZED_LIBRARY}"
++[ -f "$ACTIVE_LIBRARY" ] || fail "ACTIVE_LIBRARY does not exist: ${ACTIVE_LIBRARY}"
++case "$REPETITIONS" in
++	''|*[!0-9]*) fail "REPETITIONS must be a positive integer: ${REPETITIONS}" ;;
++esac
++[ "$REPETITIONS" -gt 0 ] || fail "REPETITIONS must be greater than zero"
++validate_identifier "PROFILE_ITEMS" "$PROFILE_ITEMS"
++validate_identifier "PROFILE_QUERIES" "$PROFILE_QUERIES"
++
++mkdir -p "$RESULT_DIR"
++BACKUP_LIBRARY="$(mktemp "${ACTIVE_LIBRARY}.simd-ablation.XXXXXX")"
++cp -p "$ACTIVE_LIBRARY" "$BACKUP_LIBRARY"
++INITIAL_SHA256="$(sha256sum "$ACTIVE_LIBRARY" | awk '{ print $1 }')"
++printf '%s\n' 'variant,rep,library_sha256,execution_time_ms,temp_read_blocks,temp_written_blocks,index_loops' \
++	> "$AGGREGATE_OUTPUT"
++printf 'initial_active_library_sha256=%s\n' "$INITIAL_SHA256" > "${RESULT_DIR}/library-manifest.txt"
++sha256sum "$SCALAR_LIBRARY" "$VECTORIZED_LIBRARY" >> "${RESULT_DIR}/library-manifest.txt"
++
++# Alternate both order and implementation so machine drift is paired within each repetition.
++for rep in $(seq 1 "$REPETITIONS"); do
++	if [ $((rep % 2)) -eq 1 ]; then
++		run_plan scalar "$rep" "$SCALAR_LIBRARY"
++		run_plan vectorized "$rep" "$VECTORIZED_LIBRARY"
++	else
++		run_plan vectorized "$rep" "$VECTORIZED_LIBRARY"
++		run_plan scalar "$rep" "$SCALAR_LIBRARY"
++	fi
++done
++
++cleanup
++BACKUP_LIBRARY=""
++RESTORED_SHA256="$(sha256sum "$ACTIVE_LIBRARY" | awk '{ print $1 }')"
++printf 'restored_active_library_sha256=%s\n' "$RESTORED_SHA256" >> "${RESULT_DIR}/library-manifest.txt"
++if [ "$RESTORED_SHA256" != "$INITIAL_SHA256" ]; then
++	echo "active library restoration checksum mismatch" >&2
++	exit 1
++fi
++
++echo "aggregate: $AGGREGATE_OUTPUT"
++echo "library manifest: ${RESULT_DIR}/library-manifest.txt"
+diff --git a/contrib/pgvector/bench/run_ivfflat_perf_profile.sh b/contrib/pgvector/bench/run_ivfflat_perf_profile.sh
+new file mode 100755
+index 0000000..b5dcd0b
+--- /dev/null
++++ b/contrib/pgvector/bench/run_ivfflat_perf_profile.sh
+@@ -0,0 +1,119 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++DBNAME="${DBNAME:-ivfflat_test}"
++WORK_MEM="${WORK_MEM:-4MB}"
++QUERY_WORK_MEM="${QUERY_WORK_MEM:-0}"
++PROBES="${PROBES:-1000}"
++PROFILE_ITEMS="${PROFILE_ITEMS:-profile_items}"
++PROFILE_QUERIES="${PROFILE_QUERIES:-profile_queries}"
++RESULT_DIR="${RESULT_DIR:-ivfflat_perf_$(date +%Y%m%d_%H%M%S)}"
++PERF_SECONDS="${PERF_SECONDS:-30}"
++APPNAME="ivfflat_perf_${$}"
++
++PSQL=(psql -X -v ON_ERROR_STOP=1 -d "$DBNAME")
++CLIENT_PID=""
++
++cleanup() {
++	if [ -n "$CLIENT_PID" ] && kill -0 "$CLIENT_PID" 2>/dev/null; then
++		kill "$CLIENT_PID" 2>/dev/null || true
++	fi
++}
++trap cleanup EXIT INT TERM
++
++validate_identifier() {
++	local name="$1"
++	local value="$2"
++
++	if ! [[ "$value" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
++		echo "${name} must be an unqualified SQL identifier: ${value}" >&2
++		exit 2
++	fi
++}
++
++for setting in "PROBES:${PROBES}" "PERF_SECONDS:${PERF_SECONDS}"; do
++	case "${setting#*:}" in
++		''|*[!0-9]*)
++			echo "${setting%%:*} must be a positive integer: ${setting#*:}" >&2
++			exit 2
++			;;
++	esac
++	if [ "${setting#*:}" -le 0 ]; then
++		echo "${setting%%:*} must be greater than zero" >&2
++		exit 2
++	fi
++done
++validate_identifier "PROFILE_ITEMS" "$PROFILE_ITEMS"
++validate_identifier "PROFILE_QUERIES" "$PROFILE_QUERIES"
++command -v perf >/dev/null || { echo "perf is required" >&2; exit 2; }
++
++mkdir -p "$RESULT_DIR"
++PGAPPNAME="$APPNAME" "${PSQL[@]}" > "${RESULT_DIR}/workload.log" 2>&1 <<SQL &
++LOAD 'vector';
++SET work_mem = '${WORK_MEM}';
++SET max_parallel_workers_per_gather = 0;
++SET enable_seqscan = off;
++SET ivfflat.probes = ${PROBES};
++SET ivfflat.iterative_scan = off;
++SET ivfflat.query_work_mem = '${QUERY_WORK_MEM}';
++EXPLAIN (ANALYZE, BUFFERS, COSTS OFF)
++SELECT count(*)
++FROM ${PROFILE_QUERIES} q
++CROSS JOIN LATERAL (
++	SELECT i.id
++	FROM ${PROFILE_ITEMS} i
++	ORDER BY i.embedding <=> q.embedding
++	LIMIT 10
++) nearest;
++SQL
++CLIENT_PID=$!
++
++BACKEND_PID=""
++for _ in $(seq 1 100); do
++	BACKEND_PID="$("${PSQL[@]}" -Atqc \
++		"SELECT pid FROM pg_stat_activity WHERE application_name = '${APPNAME}' LIMIT 1" || true)"
++	if [[ "$BACKEND_PID" =~ ^[0-9]+$ ]]; then
++		break
++	fi
++	if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
++		break
++	fi
++	sleep 0.1
++done
++
++if ! [[ "$BACKEND_PID" =~ ^[0-9]+$ ]]; then
++	set +e
++	wait "$CLIENT_PID"
++	CLIENT_STATUS=$?
++	set -e
++	CLIENT_PID=""
++	echo "could not resolve workload backend PID (psql exit ${CLIENT_STATUS})" >&2
++	exit 1
++fi
++printf 'application_name=%s\nbackend_pid=%s\n' "$APPNAME" "$BACKEND_PID" \
++	> "${RESULT_DIR}/profile-manifest.txt"
++
++set +e
++perf record -F 99 -g -o "${RESULT_DIR}/perf.data" -p "$BACKEND_PID" -- \
++	sleep "$PERF_SECONDS" > "${RESULT_DIR}/perf-record.log" 2>&1
++PERF_STATUS=$?
++wait "$CLIENT_PID"
++CLIENT_STATUS=$?
++set -e
++CLIENT_PID=""
++printf 'perf_exit_code=%s\nquery_exit_code=%s\n' "$PERF_STATUS" "$CLIENT_STATUS" \
++	>> "${RESULT_DIR}/profile-manifest.txt"
++
++perf report --stdio --children --sort=symbol -i "${RESULT_DIR}/perf.data" \
++	> "${RESULT_DIR}/perf-report-children.txt"
++perf report --stdio --no-children --sort=symbol -i "${RESULT_DIR}/perf.data" \
++	> "${RESULT_DIR}/perf-report-symbol.txt"
++perf script -i "${RESULT_DIR}/perf.data" > "${RESULT_DIR}/perf-script.txt"
++
++if [ "$CLIENT_STATUS" -ne 0 ] || ! grep -Eq 'Index Scan using profile_items_cos_idx.*loops=200' \
++	"${RESULT_DIR}/workload.log"; then
++	echo "profiled query failed or did not prove 200 IVFFlat loops" >&2
++	exit 1
++fi
++
++echo "profile: $RESULT_DIR"

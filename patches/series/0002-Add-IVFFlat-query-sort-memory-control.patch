@@ -1,0 +1,65 @@
+From 65b7534327de4cd483edd3b81615f19f753e66d1 Mon Sep 17 00:00:00 2001
+From: muzimu217 <1278844978@qq.com>
+Date: Mon, 17 Aug 2026 08:25:49 -0700
+Subject: [PATCH 2/5] Add IVFFlat query sort memory control
+
+---
+ contrib/pgvector/src/ivfflat.c | 5 +++++
+ contrib/pgvector/src/ivfflat.h | 1 +
+ contrib/pgvector/src/ivfscan.c | 3 ++-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/contrib/pgvector/src/ivfflat.c b/contrib/pgvector/src/ivfflat.c
+index d4054e7a0113ab03072ad53e2416b76185ccbe22..73ed5c0c71021e5563b8aec2c042303d77f019e9 100644
+--- a/contrib/pgvector/src/ivfflat.c
++++ b/contrib/pgvector/src/ivfflat.c
+@@ -20,6 +20,7 @@
+ int			ivfflat_probes;
+ int			ivfflat_iterative_scan;
+ int			ivfflat_max_probes;
++int			ivfflat_query_work_mem;
+ static relopt_kind ivfflat_relopt_kind;
+ 
+ static const struct config_enum_entry ivfflat_iterative_scan_options[] = {
+@@ -43,6 +44,10 @@ IvfflatInit(void)
+ 							"Valid range is 1..lists.", &ivfflat_probes,
+ 							IVFFLAT_DEFAULT_PROBES, IVFFLAT_MIN_LISTS, IVFFLAT_MAX_LISTS, PGC_USERSET, 0, NULL, NULL, NULL);
+ 
++	DefineCustomIntVariable("ivfflat.query_work_mem", "Sets the memory available to IVFFlat query sorts",
++							"Zero uses work_mem.", &ivfflat_query_work_mem,
++							0, 0, MAX_KILOBYTES, PGC_USERSET, GUC_UNIT_KB, NULL, NULL, NULL);
++
+ 	DefineCustomEnumVariable("ivfflat.iterative_scan", "Sets the mode for iterative scans",
+ 							 NULL, &ivfflat_iterative_scan,
+ 							 IVFFLAT_ITERATIVE_SCAN_OFF, ivfflat_iterative_scan_options, PGC_USERSET, 0, NULL, NULL, NULL);
+diff --git a/contrib/pgvector/src/ivfflat.h b/contrib/pgvector/src/ivfflat.h
+index 30f1ac1e67fb3639aebd8414d1ab5773a0741c76..c1eb6ce88df812db3d8e34f91256ebb149a1f97d 100644
+--- a/contrib/pgvector/src/ivfflat.h
++++ b/contrib/pgvector/src/ivfflat.h
+@@ -85,6 +85,7 @@
+ extern int	ivfflat_probes;
+ extern int	ivfflat_iterative_scan;
+ extern int	ivfflat_max_probes;
++extern int	ivfflat_query_work_mem;
+ 
+ typedef enum IvfflatIterativeScanMode
+ {
+diff --git a/contrib/pgvector/src/ivfscan.c b/contrib/pgvector/src/ivfscan.c
+index c9c858205a26a2490174657822865588430287f3..e0b2cfac62ffd039c49f806cb6a50f8cbe363508 100644
+--- a/contrib/pgvector/src/ivfscan.c
++++ b/contrib/pgvector/src/ivfscan.c
+@@ -238,9 +238,10 @@ InitScanSortState(TupleDesc tupdesc)
+ 	Oid			sortOperators[] = {Float8LessOperator};
+ 	Oid			sortCollations[] = {InvalidOid};
+ 	bool		nullsFirstFlags[] = {false};
++	int			sortWorkMem = ivfflat_query_work_mem > 0 ? ivfflat_query_work_mem : work_mem;
+ 
+ 	return tuplesort_begin_heap(tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags,
+-	                            work_mem, false);
++	                            sortWorkMem, false);
+ }
+ 
+ /*
+-- 
+2.39.5 (Apple Git-154)
+

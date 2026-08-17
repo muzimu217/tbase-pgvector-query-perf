@@ -1,0 +1,69 @@
+diff --git a/contrib/pgvector/bench/ivfflat_rescan_memory.sql b/contrib/pgvector/bench/ivfflat_rescan_memory.sql
+new file mode 100644
+index 0000000..1af641f
+--- /dev/null
++++ b/contrib/pgvector/bench/ivfflat_rescan_memory.sql
+@@ -0,0 +1,63 @@
++\set ON_ERROR_STOP on
++\pset pager off
++
++\if :external_setup
++SELECT extversion AS vector_version
++FROM pg_extension
++WHERE extname = 'vector';
++\else
++\if :create_extension
++CREATE EXTENSION IF NOT EXISTS vector;
++\else
++SELECT extversion AS vector_version
++FROM pg_extension
++WHERE extname = 'vector';
++\endif
++
++CREATE TEMP TABLE rescan_items (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++);
++
++CREATE TEMP TABLE rescan_queries (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++);
++
++\copy rescan_items(id, embedding) FROM '__ITEMS_FILE__' WITH (FORMAT csv)
++\copy rescan_queries(id, embedding) FROM '__QUERIES_FILE__' WITH (FORMAT csv)
++
++CREATE INDEX rescan_items_ivfflat_idx
++ON rescan_items
++USING ivfflat (embedding vector_cosine_ops)
++WITH (lists = __LISTS__);
++
++ANALYZE rescan_items;
++ANALYZE rescan_queries;
++\endif
++
++SET enable_seqscan = off;
++SET enable_bitmapscan = off;
++SET ivfflat.probes = __PROBES__;
++
++\pset tuples_only on
++\pset format unaligned
++\o __PID_FILE__
++SELECT pg_backend_pid();
++\o
++\pset tuples_only off
++\pset format aligned
++
++SELECT pg_sleep(__STARTUP_DELAY__);
++
++EXPLAIN (ANALYZE, BUFFERS, COSTS OFF, SUMMARY ON)
++SELECT sum(nn.id::bigint)
++FROM rescan_queries q
++CROSS JOIN LATERAL (
++    SELECT i.id
++    FROM rescan_items i
++    ORDER BY i.embedding <=> q.embedding
++    LIMIT 1
++) nn;
++
++SELECT pg_sleep(__STARTUP_DELAY__);

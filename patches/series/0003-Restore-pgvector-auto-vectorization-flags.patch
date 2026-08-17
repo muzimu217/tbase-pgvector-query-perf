@@ -1,0 +1,36 @@
+From a1721d83a8e16e42ce6ed7d1a68f8da25215797f Mon Sep 17 00:00:00 2001
+From: muzimu217 <1278844978@qq.com>
+Date: Mon, 17 Aug 2026 08:25:56 -0700
+Subject: [PATCH 3/5] Restore pgvector auto-vectorization flags
+
+---
+ contrib/pgvector/Makefile | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/contrib/pgvector/Makefile b/contrib/pgvector/Makefile
+index 76a004b3c20a9ec1f3b097572928a1c814acd6ff..88dcdd3b292ccc09b0819d02114a0841d9462e52 100644
+--- a/contrib/pgvector/Makefile
++++ b/contrib/pgvector/Makefile
+@@ -30,7 +30,8 @@ endif
+ # For auto-vectorization:
+ # - GCC (needs -ftree-vectorize OR -O3) - https://gcc.gnu.org/projects/tree-ssa/vectorization.html
+ # - Clang (could use pragma instead) - https://llvm.org/docs/Vectorizers.html
+-PG_CFLAGS += $(OPTFLAGS) -ftree-vectorize -fassociative-math -fno-signed-zeros -fno-trapping-math
++PGVECTOR_CFLAGS = $(OPTFLAGS) -ftree-vectorize -fassociative-math -fno-signed-zeros -fno-trapping-math
++PG_CFLAGS += $(PGVECTOR_CFLAGS)
+ 
+ # Debug GCC auto-vectorization
+ # PG_CFLAGS += -fopt-info-vec
+@@ -58,6 +59,9 @@ subdir = contrib/pgstattuple
+ top_builddir = ../..
+ include $(top_builddir)/src/Makefile.global
+ include $(top_srcdir)/contrib/contrib-global.mk
++
++# OpenTenBase's in-tree build does not consume PG_CFLAGS
++override CFLAGS += $(PGVECTOR_CFLAGS)
+ endif
+ 
+ # for Mac
+-- 
+2.39.5 (Apple Git-154)
+
