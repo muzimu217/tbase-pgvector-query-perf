@@ -1,0 +1,2 @@
+[ perf record: Woken up 3 times to write data ]
+[ perf record: Captured and wrote 0.688 MB /opt/opentenbase/artifacts/ivfflat-query-path-v1-profile/baseline/perf.data (2175 samples) ]

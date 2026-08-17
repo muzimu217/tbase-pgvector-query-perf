@@ -1,0 +1,3 @@
+variant,rep,execution_time_ms,temp_read_blocks,temp_written_blocks,index_loops
+inherit_work_mem,1,17649.917,69000,69400,200
+query_work_mem_64mb,1,16283.589,0,0,200

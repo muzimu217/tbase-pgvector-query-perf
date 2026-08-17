@@ -1,0 +1,2 @@
+run_id,item_rows,dims,rescans,lists,probes,samples,backend_pid,rss_start_kb,rss_peak_kb,rss_end_kb,rss_delta_kb,query_exit_code,plan_uses_ivfflat,observed_index_loops,external_setup,setup_port
+no_value_cleanup_r50000_rep5,1000,128,50000,20,1,65,10569,8428,91620,42264,33836,0,true,50000,true,22201

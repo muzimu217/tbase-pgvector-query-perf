@@ -1,0 +1,71 @@
+*** /opt/opentenbase/src/OpenTenBase/contrib/pgvector/test/expected/ivfflat_vector.out	Mon Aug 17 21:00:12 2026
+--- /opt/opentenbase/src/OpenTenBase/contrib/pgvector/results/ivfflat_vector.out	Mon Aug 17 21:20:20 2026
+***************
+*** 96,106 ****
+  CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
+  WHERE t.val != '[0,0,0]'
+  ORDER BY t.val;
+! query_val|nearest_v
+! [1,1,1]|[1,1,1]
+! [1,2,3]|[1,2,3]
+! [1,2,4]|[1,2,4]
+! (3 rows)
+  \pset format aligned
+  DROP TABLE t;
+  -- iterative
+--- 96,102 ----
+  CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
+  WHERE t.val != '[0,0,0]'
+  ORDER BY t.val;
+! ERROR:  (XX000) invalid tuplesort state
+  \pset format aligned
+  DROP TABLE t;
+  -- iterative
+***************
+*** 112,124 ****
+  HINT:  Drop the index until the table has more data.
+  SET ivfflat.iterative_scan = relaxed_order;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+!    val   
+! ---------
+!  [1,2,3]
+!  [1,1,1]
+!  [0,0,0]
+! (3 rows)
+! 
+  SET ivfflat.max_probes = 1;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+     val   
+--- 108,114 ----
+  HINT:  Drop the index until the table has more data.
+  SET ivfflat.iterative_scan = relaxed_order;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+! ERROR:  (XX000) invalid tuplesort state
+  SET ivfflat.max_probes = 1;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+     val   
+***************
+*** 128,139 ****
+  
+  SET ivfflat.max_probes = 2;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+!    val   
+! ---------
+!  [1,2,3]
+!  [1,1,1]
+! (2 rows)
+! 
+  RESET ivfflat.iterative_scan;
+  RESET ivfflat.max_probes;
+  DROP TABLE t;
+--- 118,124 ----
+  
+  SET ivfflat.max_probes = 2;
+  SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+! ERROR:  (XX000) invalid tuplesort state
+  RESET ivfflat.iterative_scan;
+  RESET ivfflat.max_probes;
+  DROP TABLE t;
+
+======================================================================
+

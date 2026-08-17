@@ -1,0 +1,3 @@
+variant,rep,library_sha256,execution_time_ms,temp_read_blocks,temp_written_blocks,index_loops
+scalar,1,0a83133b5dc6ba732f06eaf33da841f27b030086f720416972b3da9f6c62fb77,18815.175,69000,69400,200
+vectorized,1,c1fb401096b457ab2485c294da98fc803eed6097225b7d3c8ef44d8cd92e0c7d,17363.277,69000,69400,200

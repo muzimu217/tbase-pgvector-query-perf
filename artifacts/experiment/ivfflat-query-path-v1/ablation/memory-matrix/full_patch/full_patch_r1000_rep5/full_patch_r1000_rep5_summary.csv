@@ -1,0 +1,2 @@
+run_id,item_rows,dims,rescans,lists,probes,samples,backend_pid,rss_start_kb,rss_peak_kb,rss_end_kb,rss_delta_kb,query_exit_code,plan_uses_ivfflat,observed_index_loops,external_setup,setup_port
+full_patch_r1000_rep5,1000,128,1000,20,1,34,32297,8424,12920,12920,4496,0,true,1000,true,22201

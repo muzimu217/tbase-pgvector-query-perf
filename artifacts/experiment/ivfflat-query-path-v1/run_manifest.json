@@ -1,0 +1,46 @@
+{
+  "run_id": "ivfflat-query-path-v1",
+  "tier": "main/test",
+  "branch": "muzimu217/ivfflat-query-path-optimization",
+  "source_baseline": "0915c04e457f9b5625bd2ae71938f13e5e451888",
+  "delivery_baseline": "c5b6a179bd2798e21aacc2ce2abf3c775e973b92",
+  "start_time": "2026-08-17T20:37:12+08:00",
+  "end_time": "2026-08-17T23:02:30+08:00",
+  "final_status": "success",
+  "dataset": {
+    "generator": "contrib/pgvector/bench/run_ivfflat_benchmark.sh generate_vectors",
+    "item_seed": 17,
+    "query_seed": 97,
+    "item_rows": 100000,
+    "query_rows": 200,
+    "dimensions": 128,
+    "distance": "cosine",
+    "top_k": 10,
+    "lists": 1000,
+    "probes": 1000,
+    "items_sha256": "e98ac9151fce61d6b5396ee64515936db29f45377c2bf4ef84ed7fe5650f265d",
+    "queries_sha256": "a19e117907916c2e1f6af9c8d12070c81742683e70652fe14713b26674f9a82b"
+  },
+  "comparison": {
+    "order": "ABBA",
+    "repetitions": 5,
+    "scalar_library_sha256": "0a83133b5dc6ba732f06eaf33da841f27b030086f720416972b3da9f6c62fb77",
+    "vectorized_library_sha256": "c1fb401096b457ab2485c294da98fc803eed6097225b7d3c8ef44d8cd92e0c7d",
+    "work_mem": "4MB"
+  },
+  "environment": "environment/remote-environment.txt",
+  "commands": ["commands/reproduce-smoke.md", "commands/reproduce-main.md"],
+  "primary_results": {
+    "simd_matrix": "performance/simd-matrix-stability/aggregate.csv",
+    "query_work_mem_matrix": "performance/vectorized-matrix/aggregate.csv",
+    "correctness": "performance/vectorized-matrix/correctness.txt",
+    "scalar_perf": "performance/baseline/perf.data",
+    "vectorized_perf": "performance/vectorized-perf/perf.data",
+    "metrics": "metrics.json"
+  },
+  "invalidated_attempt": {
+    "path": "performance/simd-matrix-attempt1",
+    "reason": "A host-load regime change crossed one ABBA pair; retained but excluded from the headline metric."
+  },
+  "notes": "Lifecycle reliability, peak-memory reduction, SIMD latency improvement and full-probes recall are supported. Query-sort memory latency and lifecycle latency do not meet the main performance claim."
+}

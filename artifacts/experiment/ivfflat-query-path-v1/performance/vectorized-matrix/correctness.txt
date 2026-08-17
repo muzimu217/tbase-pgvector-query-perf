@@ -1,0 +1,5 @@
+exact_rows=2000
+ivfflat_rows=2000
+matching_rows=2000
+differing_rows=0
+recall_at_10=1.000000

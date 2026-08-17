@@ -1,0 +1,60 @@
+{
+  "regression_status": "pass",
+  "regression_tests_passed": 1,
+  "regression_tests_failed": 0,
+  "l2_correctness": true,
+  "inner_product_correctness": true,
+  "cosine_correctness": true,
+  "plan_uses_ivfflat": true,
+  "observed_index_loops": 200,
+  "recall_at_10": 1.0,
+  "top10_exact_rows": 2000,
+  "top10_ivfflat_rows": 2000,
+  "top10_differing_rows": 0,
+  "simd_ablation": {
+    "repetitions": 5,
+    "all_pairs_faster": true,
+    "scalar_workload_mean_ms": 20261.3764,
+    "vectorized_workload_mean_ms": 16552.9932,
+    "overall_improvement_pct": 18.302721,
+    "paired_mean_improvement_pct": 18.178254,
+    "paired_improvement_pct": [22.908368, 20.048055, 18.536844, 11.639023, 17.758982],
+    "scalar_avg_query_latency_ms": 101.306882,
+    "vectorized_avg_query_latency_ms": 82.764966,
+    "scalar_qps": 9.870998,
+    "vectorized_qps": 12.082407
+  },
+  "query_work_mem_ablation": {
+    "repetitions": 5,
+    "all_pairs_faster": true,
+    "inherit_work_mem_mean_ms": 15626.1876,
+    "query_work_mem_64mb_mean_ms": 14482.2766,
+    "overall_improvement_pct": 7.320474,
+    "paired_mean_improvement_pct": 7.284828,
+    "paired_improvement_pct": [7.965663, 7.370405, 7.0834, 6.158141, 7.846533],
+    "inherit_temp_read_blocks": 69000,
+    "inherit_temp_written_blocks": 69400,
+    "query_work_mem_64mb_temp_read_blocks": 0,
+    "query_work_mem_64mb_temp_written_blocks": 0,
+    "acceptance_gate": "below_10_percent"
+  },
+  "perf_hotspots_pct": {
+    "scalar_inner_product_total": 32.8,
+    "vectorized_inner_product_total": 17.37,
+    "inner_product_share_reduction_pct": 47.04,
+    "scalar_btfloat8fastcmp": 15.39,
+    "vectorized_btfloat8fastcmp": 19.8
+  },
+  "original_baseline_regression_exit_code": 2,
+  "original_baseline_invalid_tuplesort_errors": 3,
+  "lifecycle_ablation_repetitions_per_cell": 5,
+  "peak_growth_mean_kb": {
+    "1000": {"no_value_cleanup": 4768.8, "full_patch": 4490.4, "reduction_pct": 5.84},
+    "10000": {"no_value_cleanup": 18980.8, "full_patch": 9803.2, "reduction_pct": 48.35},
+    "50000": {"no_value_cleanup": 83732.8, "full_patch": 33521.6, "reduction_pct": 59.97}
+  },
+  "lifecycle_execution_time_relation": "mixed",
+  "p95_latency_ms": null,
+  "p99_latency_ms": null,
+  "latency_percentile_note": "The main comparison measures five complete fixed 200-query workloads; per-query P95 and P99 were not collected."
+}

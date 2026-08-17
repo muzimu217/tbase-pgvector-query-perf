@@ -1,0 +1,11 @@
+variant,rep,execution_time_ms,temp_read_blocks,temp_written_blocks,index_loops
+inherit_work_mem,1,17567.614,69000,69400,200
+query_work_mem_64mb,1,16168.237,0,0,200
+query_work_mem_64mb,2,16381.681,0,0,200
+inherit_work_mem,2,17685.148,69000,69400,200
+inherit_work_mem,3,17490.315,69000,69400,200
+query_work_mem_64mb,3,16251.406,0,0,200
+query_work_mem_64mb,4,11908.973,0,0,200
+inherit_work_mem,4,12690.470,69000,69400,200
+inherit_work_mem,5,12697.391,69000,69400,200
+query_work_mem_64mb,5,11701.086,0,0,200
