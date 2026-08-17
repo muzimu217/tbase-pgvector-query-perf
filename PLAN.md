@@ -21,6 +21,8 @@
 - 零假设：源码修改不会带来可重复的内存或延迟改善。
 - 备择假设：修复 rescan 生命周期后，嵌套循环场景内存不再随 rescan 次数持续增长；后续基于 profiling 的单点优化可降低高 `probes` 延迟且不降低 recall。
 - 第一项最小改动：回移 pgvector 0.8.6 的 IVFFlat rescan 查询向量释放修复，并用 OpenTenBase 可用的 tuplesort 重建补齐上游 `tuplesort_reset()` 语义，再补充嵌套循环回归用例。
+- 上游出处：pgvector commit [`93a5b4a16d699eaf890970777c19f19b9d545782`](https://github.com/pgvector/pgvector/commit/93a5b4a16d699eaf890970777c19f19b9d545782)，`Fix memory leak in ivfrescan`。该提交初始化 `so->value`，并在重新归一化查询值前释放上一轮分配。
+- OpenTenBase 适配边界：归一化查询值清理沿用上述上游修复语义；排序生命周期部分为平台独立适配，因为 OpenTenBase PG10 基座没有上游使用的 `tuplesort_reset()`，本项目采用销毁并重建 tuplesort 状态恢复等价批次语义。
 - 放弃条件：无法证明问题存在于 OpenTenBase 当前代码，或者修改改变距离结果、索引计划或 recall。
 - 最强备选解释：RSS 增长可能主要来自 tuplesort/内存分配器保留，而非归一化查询向量泄漏；因此必须同时保存 IVFFlat loops 和 RSS 时序，并在同主机进行 baseline/patched 对照。
 
@@ -201,3 +203,4 @@ docs/video/
 | 2026-08-17 | 修复 in-tree Makefile 对 pgvector 自动向量化参数的传递 | 标量 perf 中内积占 32.20%，汇编证明现有 `PG_CFLAGS` 未生效 | 不改算法、数据、probes 或 recall；仅恢复 pgvector 已有编译设计 |
 | 2026-08-17 | 废弃第一轮 SIMD 正式矩阵并保留原始文件 | 主机负载档位跳变跨过一个 ABBA pair | 该轮不进入主指标；稳定性复跑新增每次系统快照 |
 | 2026-08-17 | 完成 SIMD 稳定性复跑、top-10 校验和后置 perf | 需同时证明改善幅度、方向一致、结果不变与机制命中 | 5/5 同向、平均 -18.30%、recall@10=1.0；内积 perf 份额从 32.80% 降至 17.37% |
+| 2026-08-18 | 补充 rescan 内存泄漏修复的 pgvector 官方 commit URL 与平台适配边界 | R006-L4 要求每项上游来源可点击核验 | 不改变实现或实验，仅补全来源追溯 |
