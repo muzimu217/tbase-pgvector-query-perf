@@ -57,7 +57,7 @@
 - [ ] 约 20 页 PPT 完成并逐页检查
 - [ ] PPT 放入仓库文档目录
 - [ ] 视频录制脚本完成
-- [ ] 交付仓库分步 commit/push/draft PR
+- [x] 交付仓库分步 commit/push/draft PR：[#1](https://github.com/muzimu217/tbase-pgvector-query-perf/pull/1)
 - [ ] 最终提交材料索引完成
 
 ## 当前下一项

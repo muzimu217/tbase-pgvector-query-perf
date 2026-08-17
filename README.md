@@ -9,6 +9,8 @@
 已完成 `muzimu217/ivfflat-query-path-optimization` 分支的源码开发、
 分步提交与实验收口：
 
+- Draft PR：[#1 Optimize IVFFlat query path](https://github.com/muzimu217/tbase-pgvector-query-perf/pull/1)
+
 - 修复 IVFFlat rescan/iterative scan 的 tuplesort 生命周期问题。
 - 释放 Cosine rescan 的旧归一化查询向量，50,000 rescans 峰值 RSS 增长降低 59.97%。
 - 修复 OpenTenBase in-tree Makefile 的 pgvector 自动向量化参数传递，高 `probes` 负载平均耗时降低 18.30%。该优化由编译器自动向量化完成，不包含手写 SIMD intrinsics。
