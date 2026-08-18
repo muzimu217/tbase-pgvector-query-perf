@@ -29,3 +29,5 @@
 `ivfflat.query_work_mem` 的 7.32% 改善低于预设 10% 门槛，只作为辅助结果；生命周期实验的执行时间是 mixed，不宣称延迟收益；自动向量化来自现有编译器能力恢复，不是手写 SIMD intrinsics；本轮未采集逐查询 P95/P99。
 
 旧版 `docs/figures/` 图已移入 `report/appendix/legacy-figures/`，并明确标记为仅工程连通性验证；正文图表不得引用旧图。
+
+构建命令为 `PYTHON_BIN=python3 bash report/build.sh`。`PYTHON_BIN` 只用于选择本机已有的 Python 3 运行时；该运行时需要提供 Pillow 和 ReportLab，脚本本身不依赖仓库外的固定绝对路径。

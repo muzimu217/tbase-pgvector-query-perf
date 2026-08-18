@@ -1,3 +1,3 @@
-a20a51e21d29d3c2c7bd292b53bf5a9232a5ea5745d745941953afd9a83948d4  report/build/OpenTenBase-pgvector-query-perf-report.pdf
-d54ba5f00ca03d172565041baaf6d8b3208c76e02a12ebbd29c14c39b84cd34a  report/build.sh
-89edd35e0fcf8f470bffe5b808751e6189d58628cf1e323b8e1f066fbc155d60  report/build_report.py
+741571a18d2785559191cc32a9d974c734bbf1e19c47cdbf35783d6410f6ef27  OpenTenBase-pgvector-query-perf-report.pdf
+e846777aeeac1c33fd2224d23b37de09257307448e8efda325733e103bac21f1  ../build.sh
+89edd35e0fcf8f470bffe5b808751e6189d58628cf1e323b8e1f066fbc155d60  ../build_report.py
