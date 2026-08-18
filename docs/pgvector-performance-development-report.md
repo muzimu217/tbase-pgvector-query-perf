@@ -8,8 +8,8 @@
 
 ## 2. 开发与验证环境
 
-- 本地仓库：`/Users/blackevil/Documents/申请书/OpenTenBase-Packages`
-- 本地 OpenTenBase 源码：`/Users/blackevil/Documents/申请书/OpenTenBase-source`
+- 本地仓库：本仓库工作树（以提交 SHA 为准）
+- 本地 OpenTenBase 源码：外部源码工作树（路径由复现者按环境设置）
 - 远程服务器：CloudStudio Ubuntu 24.04，64 CPU，8GB 内存，约 31GB 根分区
 - OpenTenBase 安装方式：`OpenTenBase-Packages` APT 仓库安装
 - 已安装组件：`opentenbase`、`opentenbase-server`、`opentenbase-client`、`opentenbase-contrib`、`libopentenbase-dev`
@@ -139,10 +139,12 @@ docs/benchmark-data/ivfflat_benchmark_20260621_110256_plans.txt
 图表：
 
 ```text
-docs/figures/pgvector-recall-vs-probes.svg
-docs/figures/pgvector-avg-latency-vs-probes.svg
-docs/figures/pgvector-p95-latency-vs-probes.svg
+report/appendix/legacy-figures/pgvector-recall-vs-probes.svg
+report/appendix/legacy-figures/pgvector-avg-latency-vs-probes.svg
+report/appendix/legacy-figures/pgvector-p95-latency-vs-probes.svg
 ```
+
+这些图属于 2026 年 6 月的均匀随机基线，仅用于工程连通性验证，不支持本报告 headline 结论。
 
 ![Recall vs Probes](figures/pgvector-recall-vs-probes.svg)
 
