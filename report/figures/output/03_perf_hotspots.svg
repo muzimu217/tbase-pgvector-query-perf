@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="120" y="42" font-family="Arial,sans-serif" font-size="26" fill="#27302C">The inner-product hotspot shrinks after vectorization</text>
+<text x="25" y="265" transform="rotate(-90 25 265)" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#27302C">perf self-time share (%)</text>
+<line x1="120" y1="460.0" x2="1030" y2="460.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="465.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">0</text>
+<line x1="120" y1="382.0" x2="1030" y2="382.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="387.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">8</text>
+<line x1="120" y1="304.0" x2="1030" y2="304.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="309.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">16</text>
+<line x1="120" y1="226.0" x2="1030" y2="226.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="231.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">24</text>
+<line x1="120" y1="148.0" x2="1030" y2="148.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="153.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">32</text>
+<line x1="120" y1="70.0" x2="1030" y2="70.0" stroke="#D8D1C7" stroke-width="1"/>
+<text x="108" y="75.0" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#27302C">40</text>
+<line x1="120" y1="70" x2="120" y2="460" stroke="#27302C" stroke-width="2"/>
+<line x1="120" y1="460" x2="1030" y2="460" stroke="#27302C" stroke-width="2"/>
+<rect x="277.5" y="140.2" width="70" height="319.8" fill="#8A9199"/><text x="312.5" y="130.2" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#27302C">32.80%</text>
+<rect x="732.5" y="309.9" width="70" height="150.1" fill="#8A9199"/><text x="767.5" y="299.9" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#27302C">15.39%</text>
+<rect x="347.5" y="290.6" width="70" height="169.4" fill="#7F8F84"/><text x="382.5" y="280.6" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#27302C">17.37%</text>
+<rect x="802.5" y="266.9" width="70" height="193.1" fill="#7F8F84"/><text x="837.5" y="256.9" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#27302C">19.80%</text>
+<text x="347.5" y="494" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#27302C">Inner product total</text>
+<text x="802.5" y="494" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#27302C">btfloat8fastcmp</text>
+<rect x="120" y="515" width="18" height="18" fill="#8A9199"/><text x="148" y="530" font-family="Arial,sans-serif" font-size="15" fill="#27302C">Scalar</text>
+<rect x="340" y="515" width="18" height="18" fill="#7F8F84"/><text x="368" y="530" font-family="Arial,sans-serif" font-size="15" fill="#27302C">Vectorized</text>
+</svg>

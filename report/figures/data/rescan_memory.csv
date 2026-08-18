@@ -1,0 +1,7 @@
+variant,rescans,n,mean_peak_growth_kb,sd_peak_growth_kb,min_peak_growth_kb,max_peak_growth_kb,mean_end_growth_kb,mean_execution_time_ms
+full_patch,1000,5,4490.40,16.15,4464,4508,4490.40,39.217
+no_value_cleanup,1000,5,4768.80,152.80,4652,5004,4681.60,42.219
+full_patch,10000,5,9803.20,13.08,9780,9812,9803.20,376.420
+no_value_cleanup,10000,5,18980.80,504.39,18508,19820,10067.20,404.121
+full_patch,50000,5,33521.60,111.88,33324,33592,33521.60,2103.502
+no_value_cleanup,50000,5,83732.80,431.44,83192,84284,33758.40,2035.270

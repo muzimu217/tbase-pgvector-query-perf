@@ -1,0 +1,5 @@
+symbol_group,build,share_pct,source
+inner_product_total,scalar,32.80,artifacts/experiment/ivfflat-query-path-v1/metrics.json
+inner_product_total,vectorized,17.37,artifacts/experiment/ivfflat-query-path-v1/metrics.json
+btfloat8fastcmp,scalar,15.39,artifacts/experiment/ivfflat-query-path-v1/metrics.json
+btfloat8fastcmp,vectorized,19.80,artifacts/experiment/ivfflat-query-path-v1/metrics.json
