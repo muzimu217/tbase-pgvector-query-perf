@@ -25,3 +25,8 @@
 - [ ] `docs/pgvector-optimization-roadmap-engineering-plan.md` → 归档或并入设计文档（避免与 T001 路线图重复）
 - [ ] `docs/benchmark-data/` → `04-数据与图表/benchmark-data/`（旧数据保留但标注"仅工程连通性验证"）
 - [ ] `docs/figures/` → `04-数据与图表/figures/`
+
+## 汇报交付物
+
+- [x] [`07-演示文稿/ivfflat-query-path-optimization.pptx`](07-演示文稿/ivfflat-query-path-optimization.pptx)：15 页，覆盖问题、方法、结果、边界与复现链。
+- [x] [`08-视频脚本/ivfflat-query-path-optimization.md`](08-视频脚本/ivfflat-query-path-optimization.md)：约 6 分钟录制脚本与画面提示。
