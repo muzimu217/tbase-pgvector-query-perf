@@ -1,0 +1,266 @@
+diff --git a/contrib/pgvector/bench/README.md b/contrib/pgvector/bench/README.md
+index 19dc9f2..209dbef 100644
+--- a/contrib/pgvector/bench/README.md
++++ b/contrib/pgvector/bench/README.md
+@@ -37,6 +37,35 @@ METRICS=cosine ROWS=100000 DIMS=384 LISTS=100 PROBES_LIST="1 4 10 32 100" \
+   bench/run_ivfflat_benchmark.sh
+ ```
+ 
++Measure IVFFlat rescan memory in one backend:
++
++```bash
++ITEM_ROWS=1000 DIMS=128 RESCANS=50000 LISTS=20 PROBES=1 \
++  bench/run_ivfflat_rescan_memory.sh
++```
++
++For OpenTenBase, connect directly to the Datanode that executes the scan so
++the plan exposes the inner index loops and `/proc` samples the correct backend.
++Create the extension through the Coordinator first, then use:
++
++```bash
++PGHOST=127.0.0.1 PGPORT=22301 PGUSER=otbtest DBNAME=ivfflat_test \
++  CREATE_EXTENSION=false OPENTENBASE_CN_PORT=22201 RESCANS=1000 \
++  bench/run_ivfflat_rescan_memory.sh
++```
++
++When `OPENTENBASE_CN_PORT` is set, the harness creates replicated benchmark
++tables through that Coordinator, samples the backend reached through `PGPORT`,
++and removes the benchmark tables through the Coordinator on exit. Do not run
++multiple external-setup instances concurrently in the same database.
++
++For a short smoke run, reduce `RESCANS` to `1000`. The rescan harness uses
++temporary tables so the indexed nested-loop work stays in the backend selected
++by `PGHOST`, `PGPORT`, and `PGUSER`. It samples that backend's Linux `/proc`
++memory counters while a single `EXPLAIN ANALYZE` query is running. The command
++fails unless the plan proves both an IVFFlat index scan and more than one index
++loop.
++
+ Load the recommendation helper:
+ 
+ ```bash
+@@ -88,6 +117,12 @@ bench/results/ivfflat_benchmark_<timestamp>_plans.txt
+ | `OUTPUT` | auto-generated | CSV output path |
+ | `PLAN_OUTPUT` | derived from `OUTPUT` | EXPLAIN plan output path |
+ 
++The rescan memory harness additionally accepts `CREATE_EXTENSION`,
++`OPENTENBASE_CN_PORT`, `ITEM_ROWS`, `RESCANS`,
++`SAMPLE_INTERVAL`, `STARTUP_DELAY`, `RUN_ID`, `RESULT_DIR`, `SAMPLES_OUTPUT`,
++and `SUMMARY_OUTPUT`. Its defaults are intended for development evidence, not
++as a universal production workload.
++
+ ## Metrics
+ 
+ The report contains:
+@@ -97,6 +132,14 @@ The report contains:
+ - `recall_at_k`: average overlap between exact top-k results and IVFFlat top-k
+ - `exact_avg_latency_ms`: average exact scan latency with index scans disabled
+ 
++The rescan harness writes three separate evidence files:
++
++- `*_rss.csv`: time-series `VmRSS`, `RssAnon`, and `VmSize` readings for the
++  query backend
++- `*_summary.csv`: run parameters, RSS start/peak/end values, process status,
++  IVFFlat plan status, and observed index loop count
++- `*_plan.txt`: complete setup output and `EXPLAIN (ANALYZE, BUFFERS)` plan
++
+ Recall is calculated as:
+ 
+ ```text
+@@ -135,3 +178,7 @@ Heuristic results are starting points, not production guarantees.
+   for DML statements in distributed execution.
+ - Use this benchmark to compare commits, parameter settings, and hardware. Do
+   not use a single run as a universal performance claim.
++- RSS is an operating-system observation and may include allocator retention.
++  Compare repeated baseline and patched runs on the same host, and use the RSS
++  growth trend together with the plan loop count rather than interpreting one
++  endpoint in isolation.
+diff --git a/contrib/pgvector/src/ivfscan.c b/contrib/pgvector/src/ivfscan.c
+index 5e1f6d8..c9c8582 100644
+--- a/contrib/pgvector/src/ivfscan.c
++++ b/contrib/pgvector/src/ivfscan.c
+@@ -15,6 +15,8 @@
+ #define GetScanList(ptr) pairingheap_container(IvfflatScanList, ph_node, ptr)
+ #define GetScanListConst(ptr) pairingheap_const_container(IvfflatScanList, ph_node, ptr)
+ 
++static Tuplesortstate *InitScanSortState(TupleDesc tupdesc);
++
+ /*
+  * Compare list distances
+  */
+@@ -116,6 +118,13 @@ GetScanItems(IndexScanDesc scan, Datum value)
+ 	TupleDesc	tupdesc = RelationGetDescr(scan->indexRelation);
+ 	TupleTableSlot *slot = so->vslot;
+ 	int			batchProbes = 0;
++	MemoryContext oldCtx;
++
++	/* OpenTenBase does not provide tuplesort_reset() */
++	tuplesort_end(so->sortstate);
++	oldCtx = MemoryContextSwitchTo(so->tmpCtx);
++	so->sortstate = InitScanSortState(so->tupdesc);
++	MemoryContextSwitchTo(oldCtx);
+ 
+ 	/* Search closest probes lists */
+ 	while (so->listIndex < so->maxProbes && (++batchProbes) <= so->probes)
+@@ -270,6 +279,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
+ 	so->probes = probes;
+ 	so->maxProbes = maxProbes;
+ 	so->dimensions = dimensions;
++	so->value = PointerGetDatum(NULL);
+ 
+ 	/* Set support functions */
+ 	so->procinfo = index_getprocinfo(index, 1, IVFFLAT_DISTANCE_PROC);
+@@ -325,6 +335,12 @@ ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int
+ 	pairingheap_reset(so->listQueue);
+ 	so->listIndex = 0;
+ 
++	if (so->normprocinfo != NULL && DatumGetPointer(so->value) != NULL)
++	{
++		pfree(DatumGetPointer(so->value));
++		so->value = PointerGetDatum(NULL);
++	}
++
+ 	if (keys && scan->numberOfKeys > 0)
+ 		memmove(scan->keyData, keys, scan->numberOfKeys * sizeof(ScanKeyData));
+ 
+diff --git a/contrib/pgvector/test/expected/ivfflat_vector.out b/contrib/pgvector/test/expected/ivfflat_vector.out
+index 1c78d7f..191efe5 100644
+--- a/contrib/pgvector/test/expected/ivfflat_vector.out
++++ b/contrib/pgvector/test/expected/ivfflat_vector.out
+@@ -3,6 +3,9 @@ SET enable_seqscan = off;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -26,7 +29,7 @@ SELECT COUNT(*) FROM t;
+ (1 row)
+ 
+ TRUNCATE t;
+-NOTICE:  ivfflat index created with little data
++NOTICE:  (00000) ivfflat index created with little data
+ DETAIL:  This will cause low recall.
+ HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+@@ -39,6 +42,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_ip_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <#> '[3,3,3]';
+    val   
+@@ -60,6 +66,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_cosine_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+    val   
+@@ -81,11 +90,26 @@ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2
+      3
+ (1 row)
+ 
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++query_val|nearest_v
++[1,1,1]|[1,1,1]
++[1,2,3]|[1,2,3]
++[1,2,4]|[1,2,4]
++(3 rows)
++\pset format aligned
+ DROP TABLE t;
+ -- iterative
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 3);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SET ivfflat.iterative_scan = relaxed_order;
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -117,6 +141,9 @@ DROP TABLE t;
+ CREATE UNLOGGED TABLE t (val vector(3));
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+ ---------
+@@ -129,10 +156,10 @@ DROP TABLE t;
+ -- options
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 0);
+-ERROR:  value 0 out of bounds for option "lists"
++ERROR:  (22023) value 0 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 32769);
+-ERROR:  value 32769 out of bounds for option "lists"
++ERROR:  (22023) value 32769 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ SHOW ivfflat.probes;
+  ivfflat.probes 
+@@ -141,9 +168,9 @@ SHOW ivfflat.probes;
+ (1 row)
+ 
+ SET ivfflat.probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
+ SET ivfflat.probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
+ SHOW ivfflat.iterative_scan;
+  ivfflat.iterative_scan 
+ ------------------------
+@@ -151,7 +178,7 @@ SHOW ivfflat.iterative_scan;
+ (1 row)
+ 
+ SET ivfflat.iterative_scan = on;
+-ERROR:  invalid value for parameter "ivfflat.iterative_scan": "on"
++ERROR:  (22023) invalid value for parameter "ivfflat.iterative_scan": "on"
+ HINT:  Available values: off, relaxed_order.
+ SHOW ivfflat.max_probes;
+  ivfflat.max_probes 
+@@ -160,7 +187,7 @@ SHOW ivfflat.max_probes;
+ (1 row)
+ 
+ SET ivfflat.max_probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ SET ivfflat.max_probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ DROP TABLE t;
+diff --git a/contrib/pgvector/test/sql/ivfflat_vector.sql b/contrib/pgvector/test/sql/ivfflat_vector.sql
+index 78dfd16..364fabe 100644
+--- a/contrib/pgvector/test/sql/ivfflat_vector.sql
++++ b/contrib/pgvector/test/sql/ivfflat_vector.sql
+@@ -41,6 +41,13 @@ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> '[0,0,0]') t2;
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2;
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++\pset format aligned
+ 
+ DROP TABLE t;
+ 

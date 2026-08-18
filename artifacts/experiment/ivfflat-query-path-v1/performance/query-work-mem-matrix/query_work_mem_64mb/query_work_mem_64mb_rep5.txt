@@ -1,0 +1,27 @@
+could not change directory to "/root": Permission denied
+LOAD
+SET
+SET
+SET
+SET
+SET
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=19872.584..19872.584 rows=1 loops=1)
+   Buffers: shared hit=1451624
+   ->  Nested Loop (actual time=113.289..19871.037 rows=2000 loops=1)
+         Buffers: shared hit=1451624
+         ->  Seq Scan on profile_queries q (actual time=0.012..0.384 rows=200 loops=1)
+               Buffers: shared hit=15
+         ->  Limit (actual time=99.299..99.345 rows=10 loops=200)
+               Buffers: shared hit=1451609
+               ->  Index Scan using profile_items_cos_idx on profile_items i (actual time=99.295..99.338 rows=10 loops=200)
+                     Order By: (embedding <=> q.embedding)
+                     Buffers: shared hit=1451609
+ Planning:
+   Buffers: shared hit=150
+ Planning Time: 0.839 ms
+ Query Memory: execution query_mem 12MB
+ Execution Time: 19873.831 ms
+(16 rows)
+

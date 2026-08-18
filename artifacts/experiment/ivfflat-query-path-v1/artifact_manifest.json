@@ -1,0 +1,52 @@
+{
+  "run_id": "ivfflat-query-path-v1",
+  "tier": "main/test",
+  "status": "success",
+  "source_baseline": "0915c04e457f9b5625bd2ae71938f13e5e451888",
+  "key_files": [
+    "environment/remote-environment.txt",
+    "commands/reproduce-smoke.md",
+    "commands/reproduce-main.md",
+    "ablation/memory-matrix-aggregate.csv",
+    "ablation/memory-matrix-stats.csv",
+    "ablation/original-baseline-regression.log",
+    "ablation/final-patched-regression.log",
+    "ablation/SHA256SUMS.local",
+    "performance/data/dataset-manifest.md",
+    "performance/data/queries.csv",
+    "performance/SHA256SUMS",
+    "performance/simd-matrix-stability/aggregate.csv",
+    "performance/simd-matrix-stability/library-manifest.txt",
+    "performance/simd-matrix-attempt1/aggregate.csv",
+    "performance/vectorized-matrix/aggregate.csv",
+    "performance/vectorized-matrix/correctness.txt",
+    "performance/baseline/perf.data",
+    "performance/baseline/perf-report-symbol.txt",
+    "performance/vectorized-perf/perf.data",
+    "performance/vectorized-perf/perf-report-symbol.txt",
+    "performance/vectorized-regression.log",
+    "performance/final-vectorized-regression.log",
+    "run_manifest.json",
+    "metrics.json",
+    "metrics.md",
+    "claim_validation.md",
+    "DECISION.md",
+    "summary.md",
+    "runlog.summary.md"
+  ],
+  "evidence_directories": [
+    "ablation/memory-matrix",
+    "performance/simd-matrix-stability/scalar",
+    "performance/simd-matrix-stability/vectorized",
+    "performance/vectorized-matrix/inherit_work_mem",
+    "performance/vectorized-matrix/query_work_mem_64mb"
+  ],
+  "patch_series": [
+    "../../../patches/0001-ivfflat-query-path-optimization.patch",
+    "../../../patches/series/0001-Fix-IVFFlat-scan-lifecycle.patch",
+    "../../../patches/series/0002-Add-IVFFlat-query-sort-memory-control.patch",
+    "../../../patches/series/0003-Restore-pgvector-auto-vectorization-flags.patch",
+    "../../../patches/series/0004-Add-IVFFlat-rescan-regression-coverage.patch",
+    "../../../patches/series/0005-Add-IVFFlat-profiling-harnesses.patch"
+  ]
+}

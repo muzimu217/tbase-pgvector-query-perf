@@ -1,0 +1,12 @@
+Host: 45.202.199.140
+Kernel: Linux 3.10.0-1160.80.1.el7.x86_64 x86_64
+CPU: 4 x QEMU Virtual CPU version 2.5+, 1 thread/core
+Memory: 3.7 GiB RAM, 2.0 GiB swap
+Compiler: gcc 11.2.1 20220127 (Red Hat 11.2.1-9)
+OpenTenBase: PostgreSQL 10.0 @ OpenTenBase_v5.0, commit 0915c04e4
+pgvector: 0.8.0
+Configure: --prefix=/opt/opentenbase/install CFLAGS="-O2 -g -fno-omit-frame-pointer" --enable-thread-safety --with-zstd --with-lz4 --with-libxml --disable-license
+Cluster root: /data/otb/ivfflat-v1
+GTM: 127.0.0.1:22101
+Coordinator: 127.0.0.1:22201
+Datanode: 127.0.0.1:22301

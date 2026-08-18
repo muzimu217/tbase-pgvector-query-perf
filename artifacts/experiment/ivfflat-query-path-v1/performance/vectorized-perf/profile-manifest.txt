@@ -1,0 +1,4 @@
+application_name=ivfflat_perf_15136
+backend_pid=15142
+perf_exit_code=143
+query_exit_code=0

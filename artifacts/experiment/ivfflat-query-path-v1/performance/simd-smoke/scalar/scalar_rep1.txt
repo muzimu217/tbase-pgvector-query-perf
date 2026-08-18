@@ -1,0 +1,26 @@
+LOAD
+SET
+SET
+SET
+SET
+SET
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=18813.937..18813.937 rows=1 loops=1)
+   Buffers: shared hit=1451624, temp read=69000 written=69400
+   ->  Nested Loop (actual time=95.499..18813.264 rows=2000 loops=1)
+         Buffers: shared hit=1451624, temp read=69000 written=69400
+         ->  Seq Scan on profile_queries q (actual time=0.010..0.376 rows=200 loops=1)
+               Buffers: shared hit=15
+         ->  Limit (actual time=94.016..94.057 rows=10 loops=200)
+               Buffers: shared hit=1451609, temp read=69000 written=69400
+               ->  Index Scan using profile_items_cos_idx on profile_items i (actual time=94.012..94.051 rows=10 loops=200)
+                     Order By: (embedding <=> q.embedding)
+                     Buffers: shared hit=1451609, temp read=69000 written=69400
+ Planning:
+   Buffers: shared hit=132
+ Planning Time: 0.684 ms
+ Query Memory: execution query_mem 5MB
+ Execution Time: 18815.175 ms
+(16 rows)
+

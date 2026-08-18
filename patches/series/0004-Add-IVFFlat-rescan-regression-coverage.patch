@@ -1,0 +1,181 @@
+From 15aaa2027c0b35da71e96fc7a2e5d122713aac00 Mon Sep 17 00:00:00 2001
+From: muzimu217 <1278844978@qq.com>
+Date: Mon, 17 Aug 2026 08:26:04 -0700
+Subject: [PATCH 4/5] Add IVFFlat rescan regression coverage
+
+---
+ .../pgvector/test/expected/ivfflat_vector.out | 55 ++++++++++++++++---
+ contrib/pgvector/test/sql/ivfflat_vector.sql  | 14 +++++
+ 2 files changed, 61 insertions(+), 8 deletions(-)
+
+diff --git a/contrib/pgvector/test/expected/ivfflat_vector.out b/contrib/pgvector/test/expected/ivfflat_vector.out
+index 1c78d7fdce9776ec0745968cfe8ce94cc368d21b..aaa3094111346da4910fe3c769d135e810ec60b4 100644
+--- a/contrib/pgvector/test/expected/ivfflat_vector.out
++++ b/contrib/pgvector/test/expected/ivfflat_vector.out
+@@ -3,6 +3,9 @@ SET enable_seqscan = off;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -26,7 +29,7 @@ SELECT COUNT(*) FROM t;
+ (1 row)
+ 
+ TRUNCATE t;
+-NOTICE:  ivfflat index created with little data
++NOTICE:  (00000) ivfflat index created with little data
+ DETAIL:  This will cause low recall.
+ HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+@@ -39,6 +42,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_ip_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <#> '[3,3,3]';
+    val   
+@@ -60,6 +66,9 @@ DROP TABLE t;
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_cosine_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+    val   
+@@ -81,11 +90,26 @@ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2
+      3
+ (1 row)
+ 
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++query_val|nearest_v
++[1,1,1]|[1,1,1]
++[1,2,3]|[1,2,3]
++[1,2,4]|[1,2,4]
++(3 rows)
++\pset format aligned
+ DROP TABLE t;
+ -- iterative
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 3);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SET ivfflat.iterative_scan = relaxed_order;
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+@@ -117,6 +141,9 @@ DROP TABLE t;
+ CREATE UNLOGGED TABLE t (val vector(3));
+ INSERT INTO t (val) VALUES ('[0,0,0]'), ('[1,2,3]'), ('[1,1,1]'), (NULL);
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 1);
++NOTICE:  (00000) ivfflat index created with little data
++DETAIL:  This will cause low recall.
++HINT:  Drop the index until the table has more data.
+ SELECT * FROM t ORDER BY val <-> '[3,3,3]';
+    val   
+ ---------
+@@ -129,10 +156,10 @@ DROP TABLE t;
+ -- options
+ CREATE TABLE t (val vector(3)) DISTRIBUTE BY REPLICATION;
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 0);
+-ERROR:  value 0 out of bounds for option "lists"
++ERROR:  (22023) value 0 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ CREATE INDEX ON t USING ivfflat (val vector_l2_ops) WITH (lists = 32769);
+-ERROR:  value 32769 out of bounds for option "lists"
++ERROR:  (22023) value 32769 out of bounds for option "lists"
+ DETAIL:  Valid values are between "1" and "32768".
+ SHOW ivfflat.probes;
+  ivfflat.probes 
+@@ -141,9 +168,21 @@ SHOW ivfflat.probes;
+ (1 row)
+ 
+ SET ivfflat.probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
+ SET ivfflat.probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.probes" (1 .. 32768)
++\pset format unaligned
++SHOW ivfflat.query_work_mem;
++ivfflat.query_work_mem
++0
++(1 row)
++SET ivfflat.query_work_mem = '64MB';
++SHOW ivfflat.query_work_mem;
++ivfflat.query_work_mem
++64MB
++(1 row)
++RESET ivfflat.query_work_mem;
++\pset format aligned
+ SHOW ivfflat.iterative_scan;
+  ivfflat.iterative_scan 
+ ------------------------
+@@ -151,7 +190,7 @@ SHOW ivfflat.iterative_scan;
+ (1 row)
+ 
+ SET ivfflat.iterative_scan = on;
+-ERROR:  invalid value for parameter "ivfflat.iterative_scan": "on"
++ERROR:  (22023) invalid value for parameter "ivfflat.iterative_scan": "on"
+ HINT:  Available values: off, relaxed_order.
+ SHOW ivfflat.max_probes;
+  ivfflat.max_probes 
+@@ -160,7 +199,7 @@ SHOW ivfflat.max_probes;
+ (1 row)
+ 
+ SET ivfflat.max_probes = 0;
+-ERROR:  0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 0 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ SET ivfflat.max_probes = 32769;
+-ERROR:  32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
++ERROR:  (22023) 32769 is outside the valid range for parameter "ivfflat.max_probes" (1 .. 32768)
+ DROP TABLE t;
+diff --git a/contrib/pgvector/test/sql/ivfflat_vector.sql b/contrib/pgvector/test/sql/ivfflat_vector.sql
+index 78dfd160433822206a92a58a230326ce853f7614..2b107913daf4dd0750ea413a881e0a8385faa90b 100644
+--- a/contrib/pgvector/test/sql/ivfflat_vector.sql
++++ b/contrib/pgvector/test/sql/ivfflat_vector.sql
+@@ -41,6 +41,13 @@ INSERT INTO t (val) VALUES ('[1,2,4]');
+ SELECT * FROM t ORDER BY val <=> '[3,3,3]';
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> '[0,0,0]') t2;
+ SELECT COUNT(*) FROM (SELECT * FROM t ORDER BY val <=> (SELECT NULL::vector)) t2;
++\pset format unaligned
++SELECT t.val::text AS query_val, nn.val::text AS nearest_v
++FROM t
++CROSS JOIN LATERAL (SELECT * FROM t t2 ORDER BY val <=> t.val LIMIT 1) nn
++WHERE t.val != '[0,0,0]'
++ORDER BY t.val;
++\pset format aligned
+ 
+ DROP TABLE t;
+ 
+@@ -84,6 +91,13 @@ SHOW ivfflat.probes;
+ SET ivfflat.probes = 0;
+ SET ivfflat.probes = 32769;
+ 
++\pset format unaligned
++SHOW ivfflat.query_work_mem;
++SET ivfflat.query_work_mem = '64MB';
++SHOW ivfflat.query_work_mem;
++RESET ivfflat.query_work_mem;
++\pset format aligned
++
+ SHOW ivfflat.iterative_scan;
+ 
+ SET ivfflat.iterative_scan = on;
+-- 
+2.39.5 (Apple Git-154)
+

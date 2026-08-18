@@ -1,0 +1,60 @@
+From 23d5d8a32eb695755734fde6371e696cb526c704 Mon Sep 17 00:00:00 2001
+From: muzimu217 <1278844978@qq.com>
+Date: Mon, 17 Aug 2026 08:25:29 -0700
+Subject: [PATCH 1/5] Fix IVFFlat scan lifecycle
+
+---
+ contrib/pgvector/src/ivfscan.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/contrib/pgvector/src/ivfscan.c b/contrib/pgvector/src/ivfscan.c
+index 5e1f6d8f76beec3f0c8cd6de664a1f63636cdd87..c9c858205a26a2490174657822865588430287f3 100644
+--- a/contrib/pgvector/src/ivfscan.c
++++ b/contrib/pgvector/src/ivfscan.c
+@@ -15,6 +15,8 @@
+ #define GetScanList(ptr) pairingheap_container(IvfflatScanList, ph_node, ptr)
+ #define GetScanListConst(ptr) pairingheap_const_container(IvfflatScanList, ph_node, ptr)
+ 
++static Tuplesortstate *InitScanSortState(TupleDesc tupdesc);
++
+ /*
+  * Compare list distances
+  */
+@@ -116,6 +118,13 @@ GetScanItems(IndexScanDesc scan, Datum value)
+ 	TupleDesc	tupdesc = RelationGetDescr(scan->indexRelation);
+ 	TupleTableSlot *slot = so->vslot;
+ 	int			batchProbes = 0;
++	MemoryContext oldCtx;
++
++	/* OpenTenBase does not provide tuplesort_reset() */
++	tuplesort_end(so->sortstate);
++	oldCtx = MemoryContextSwitchTo(so->tmpCtx);
++	so->sortstate = InitScanSortState(so->tupdesc);
++	MemoryContextSwitchTo(oldCtx);
+ 
+ 	/* Search closest probes lists */
+ 	while (so->listIndex < so->maxProbes && (++batchProbes) <= so->probes)
+@@ -270,6 +279,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
+ 	so->probes = probes;
+ 	so->maxProbes = maxProbes;
+ 	so->dimensions = dimensions;
++	so->value = PointerGetDatum(NULL);
+ 
+ 	/* Set support functions */
+ 	so->procinfo = index_getprocinfo(index, 1, IVFFLAT_DISTANCE_PROC);
+@@ -325,6 +335,12 @@ ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int
+ 	pairingheap_reset(so->listQueue);
+ 	so->listIndex = 0;
+ 
++	if (so->normprocinfo != NULL && DatumGetPointer(so->value) != NULL)
++	{
++		pfree(DatumGetPointer(so->value));
++		so->value = PointerGetDatum(NULL);
++	}
++
+ 	if (keys && scan->numberOfKeys > 0)
+ 		memmove(scan->keyData, keys, scan->numberOfKeys * sizeof(ScanKeyData));
+ 
+-- 
+2.39.5 (Apple Git-154)
+

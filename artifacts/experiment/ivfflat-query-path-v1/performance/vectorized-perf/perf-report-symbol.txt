@@ -1,0 +1,1459 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cycles'
+# Event count (approx.): 53555435087
+#
+# Overhead  Symbol                                       
+# ........  .............................................
+#
+    19.80%  [.] btfloat8fastcmp
+            |          
+            |--18.01%--qsort_ssup
+            |          |          
+            |          |--15.09%--qsort_ssup
+            |          |          |          
+            |          |          |--11.79%--qsort_ssup
+            |          |          |          |          
+            |          |          |          |--8.68%--qsort_ssup
+            |          |          |          |          |          
+            |          |          |          |          |--5.34%--qsort_ssup
+            |          |          |          |          |          |          
+            |          |          |          |          |          |--2.90%--dumptuples
+            |          |          |          |          |          |          |          
+            |          |          |          |          |          |           --2.79%--tuplesort_puttupleslot
+            |          |          |          |          |          |                     GetScanItems
+            |          |          |          |          |          |                     ivfflatgettuple
+            |          |          |          |          |          |                     index_getnext_tid
+            |          |          |          |          |          |                     index_getnext
+            |          |          |          |          |          |                     IndexNextWithReorder
+            |          |          |          |          |          |                     ExecScan
+            |          |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |          |                     ExecLimit
+            |          |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |          |                     ExecNestLoop
+            |          |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |          |                     fetch_input_tuple
+            |          |          |          |          |          |                     ExecAgg
+            |          |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |          |                     standard_ExecutorRun
+            |          |          |          |          |          |                     ExecutorRun
+            |          |          |          |          |          |                     ExplainOnePlan
+            |          |          |          |          |          |                     ExplainOneQuery
+            |          |          |          |          |          |                     ExplainQuery
+            |          |          |          |          |          |                     standard_ProcessUtility
+            |          |          |          |          |          |                     ProcessUtility
+            |          |          |          |          |          |                     PortalRunUtility
+            |          |          |          |          |          |                     FillPortalStore
+            |          |          |          |          |          |                     PortalRun
+            |          |          |          |          |          |                     exec_simple_query
+            |          |          |          |          |          |                     PostgresMain
+            |          |          |          |          |          |                     ServerLoop
+            |          |          |          |          |          |                     PostmasterMain
+            |          |          |          |          |          |                     main
+            |          |          |          |          |          |                     __libc_start_main
+            |          |          |          |          |          |          
+            |          |          |          |          |           --2.45%--qsort_ssup
+            |          |          |          |          |                     |          
+            |          |          |          |          |                     |--1.83%--dumptuples
+            |          |          |          |          |                     |          |          
+            |          |          |          |          |                     |           --1.72%--tuplesort_puttupleslot
+            |          |          |          |          |                     |                     GetScanItems
+            |          |          |          |          |                     |                     ivfflatgettuple
+            |          |          |          |          |                     |                     index_getnext_tid
+            |          |          |          |          |                     |                     index_getnext
+            |          |          |          |          |                     |                     IndexNextWithReorder
+            |          |          |          |          |                     |                     ExecScan
+            |          |          |          |          |                     |                     ExecProcNodeInstr
+            |          |          |          |          |                     |                     ExecLimit
+            |          |          |          |          |                     |                     ExecProcNodeInstr
+            |          |          |          |          |                     |                     ExecNestLoop
+            |          |          |          |          |                     |                     ExecProcNodeInstr
+            |          |          |          |          |                     |                     fetch_input_tuple
+            |          |          |          |          |                     |                     ExecAgg
+            |          |          |          |          |                     |                     ExecProcNodeInstr
+            |          |          |          |          |                     |                     standard_ExecutorRun
+            |          |          |          |          |                     |                     ExecutorRun
+            |          |          |          |          |                     |                     ExplainOnePlan
+            |          |          |          |          |                     |                     ExplainOneQuery
+            |          |          |          |          |                     |                     ExplainQuery
+            |          |          |          |          |                     |                     standard_ProcessUtility
+            |          |          |          |          |                     |                     ProcessUtility
+            |          |          |          |          |                     |                     PortalRunUtility
+            |          |          |          |          |                     |                     FillPortalStore
+            |          |          |          |          |                     |                     PortalRun
+            |          |          |          |          |                     |                     exec_simple_query
+            |          |          |          |          |                     |                     PostgresMain
+            |          |          |          |          |                     |                     ServerLoop
+            |          |          |          |          |                     |                     PostmasterMain
+            |          |          |          |          |                     |                     main
+            |          |          |          |          |                     |                     __libc_start_main
+            |          |          |          |          |                     |          
+            |          |          |          |          |                      --0.61%--qsort_ssup
+            |          |          |          |          |                                |          
+            |          |          |          |          |                                 --0.50%--dumptuples
+            |          |          |          |          |                                           tuplesort_puttupleslot
+            |          |          |          |          |                                           GetScanItems
+            |          |          |          |          |                                           ivfflatgettuple
+            |          |          |          |          |                                           index_getnext_tid
+            |          |          |          |          |                                           index_getnext
+            |          |          |          |          |                                           IndexNextWithReorder
+            |          |          |          |          |                                           ExecScan
+            |          |          |          |          |                                           ExecProcNodeInstr
+            |          |          |          |          |                                           ExecLimit
+            |          |          |          |          |                                           ExecProcNodeInstr
+            |          |          |          |          |                                           ExecNestLoop
+            |          |          |          |          |                                           ExecProcNodeInstr
+            |          |          |          |          |                                           fetch_input_tuple
+            |          |          |          |          |                                           ExecAgg
+            |          |          |          |          |                                           ExecProcNodeInstr
+            |          |          |          |          |                                           standard_ExecutorRun
+            |          |          |          |          |                                           ExecutorRun
+            |          |          |          |          |                                           ExplainOnePlan
+            |          |          |          |          |                                           ExplainOneQuery
+            |          |          |          |          |                                           ExplainQuery
+            |          |          |          |          |                                           standard_ProcessUtility
+            |          |          |          |          |                                           ProcessUtility
+            |          |          |          |          |                                           PortalRunUtility
+            |          |          |          |          |                                           FillPortalStore
+            |          |          |          |          |                                           PortalRun
+            |          |          |          |          |                                           exec_simple_query
+            |          |          |          |          |                                           PostgresMain
+            |          |          |          |          |                                           ServerLoop
+            |          |          |          |          |                                           PostmasterMain
+            |          |          |          |          |                                           main
+            |          |          |          |          |                                           __libc_start_main
+            |          |          |          |          |          
+            |          |          |          |           --3.34%--dumptuples
+            |          |          |          |                     |          
+            |          |          |          |                      --3.06%--tuplesort_puttupleslot
+            |          |          |          |                                GetScanItems
+            |          |          |          |                                ivfflatgettuple
+            |          |          |          |                                index_getnext_tid
+            |          |          |          |                                index_getnext
+            |          |          |          |                                IndexNextWithReorder
+            |          |          |          |                                ExecScan
+            |          |          |          |                                ExecProcNodeInstr
+            |          |          |          |                                ExecLimit
+            |          |          |          |                                ExecProcNodeInstr
+            |          |          |          |                                ExecNestLoop
+            |          |          |          |                                ExecProcNodeInstr
+            |          |          |          |                                fetch_input_tuple
+            |          |          |          |                                ExecAgg
+            |          |          |          |                                ExecProcNodeInstr
+            |          |          |          |                                standard_ExecutorRun
+            |          |          |          |                                ExecutorRun
+            |          |          |          |                                ExplainOnePlan
+            |          |          |          |                                ExplainOneQuery
+            |          |          |          |                                ExplainQuery
+            |          |          |          |                                standard_ProcessUtility
+            |          |          |          |                                ProcessUtility
+            |          |          |          |                                PortalRunUtility
+            |          |          |          |                                FillPortalStore
+            |          |          |          |                                PortalRun
+            |          |          |          |                                exec_simple_query
+            |          |          |          |                                PostgresMain
+            |          |          |          |                                ServerLoop
+            |          |          |          |                                PostmasterMain
+            |          |          |          |                                main
+            |          |          |          |                                __libc_start_main
+            |          |          |          |          
+            |          |          |           --3.11%--dumptuples
+            |          |          |                     |          
+            |          |          |                      --2.78%--tuplesort_puttupleslot
+            |          |          |                                GetScanItems
+            |          |          |                                ivfflatgettuple
+            |          |          |                                index_getnext_tid
+            |          |          |                                index_getnext
+            |          |          |                                IndexNextWithReorder
+            |          |          |                                ExecScan
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                ExecLimit
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                ExecNestLoop
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                fetch_input_tuple
+            |          |          |                                ExecAgg
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                standard_ExecutorRun
+            |          |          |                                ExecutorRun
+            |          |          |                                ExplainOnePlan
+            |          |          |                                ExplainOneQuery
+            |          |          |                                ExplainQuery
+            |          |          |                                standard_ProcessUtility
+            |          |          |                                ProcessUtility
+            |          |          |                                PortalRunUtility
+            |          |          |                                FillPortalStore
+            |          |          |                                PortalRun
+            |          |          |                                exec_simple_query
+            |          |          |                                PostgresMain
+            |          |          |                                ServerLoop
+            |          |          |                                PostmasterMain
+            |          |          |                                main
+            |          |          |                                __libc_start_main
+            |          |          |          
+            |          |           --3.30%--dumptuples
+            |          |                     |          
+            |          |                      --3.13%--tuplesort_puttupleslot
+            |          |                                GetScanItems
+            |          |                                ivfflatgettuple
+            |          |                                index_getnext_tid
+            |          |                                index_getnext
+            |          |                                IndexNextWithReorder
+            |          |                                ExecScan
+            |          |                                ExecProcNodeInstr
+            |          |                                ExecLimit
+            |          |                                ExecProcNodeInstr
+            |          |                                ExecNestLoop
+            |          |                                ExecProcNodeInstr
+            |          |                                fetch_input_tuple
+            |          |                                ExecAgg
+            |          |                                ExecProcNodeInstr
+            |          |                                standard_ExecutorRun
+            |          |                                ExecutorRun
+            |          |                                ExplainOnePlan
+            |          |                                ExplainOneQuery
+            |          |                                ExplainQuery
+            |          |                                standard_ProcessUtility
+            |          |                                ProcessUtility
+            |          |                                PortalRunUtility
+            |          |                                FillPortalStore
+            |          |                                PortalRun
+            |          |                                exec_simple_query
+            |          |                                PostgresMain
+            |          |                                ServerLoop
+            |          |                                PostmasterMain
+            |          |                                main
+            |          |                                __libc_start_main
+            |          |          
+            |           --2.91%--dumptuples
+            |                     |          
+            |                      --2.63%--tuplesort_puttupleslot
+            |                                GetScanItems
+            |                                ivfflatgettuple
+            |                                index_getnext_tid
+            |                                index_getnext
+            |                                IndexNextWithReorder
+            |                                ExecScan
+            |                                ExecProcNodeInstr
+            |                                ExecLimit
+            |                                ExecProcNodeInstr
+            |                                ExecNestLoop
+            |                                ExecProcNodeInstr
+            |                                fetch_input_tuple
+            |                                ExecAgg
+            |                                ExecProcNodeInstr
+            |                                standard_ExecutorRun
+            |                                ExecutorRun
+            |                                ExplainOnePlan
+            |                                ExplainOneQuery
+            |                                ExplainQuery
+            |                                standard_ProcessUtility
+            |                                ProcessUtility
+            |                                PortalRunUtility
+            |                                FillPortalStore
+            |                                PortalRun
+            |                                exec_simple_query
+            |                                PostgresMain
+            |                                ServerLoop
+            |                                PostmasterMain
+            |                                main
+            |                                __libc_start_main
+            |          
+             --1.34%--dumptuples
+                       |          
+                        --1.29%--tuplesort_puttupleslot
+                                  GetScanItems
+                                  ivfflatgettuple
+                                  index_getnext_tid
+                                  index_getnext
+                                  IndexNextWithReorder
+                                  ExecScan
+                                  ExecProcNodeInstr
+                                  ExecLimit
+                                  ExecProcNodeInstr
+                                  ExecNestLoop
+                                  ExecProcNodeInstr
+                                  fetch_input_tuple
+                                  ExecAgg
+                                  ExecProcNodeInstr
+                                  standard_ExecutorRun
+                                  ExecutorRun
+                                  ExplainOnePlan
+                                  ExplainOneQuery
+                                  ExplainQuery
+                                  standard_ProcessUtility
+                                  ProcessUtility
+                                  PortalRunUtility
+                                  FillPortalStore
+                                  PortalRun
+                                  exec_simple_query
+                                  PostgresMain
+                                  ServerLoop
+                                  PostmasterMain
+                                  main
+                                  __libc_start_main
+
+    17.37%  [.] vector_negative_inner_product
+            |          
+             --16.92%--FunctionCall2Coll
+                       |          
+                        --16.64%--GetScanItems
+                                  ivfflatgettuple
+                                  index_getnext_tid
+                                  index_getnext
+                                  IndexNextWithReorder
+                                  ExecScan
+                                  ExecProcNodeInstr
+                                  ExecLimit
+                                  ExecProcNodeInstr
+                                  ExecNestLoop
+                                  ExecProcNodeInstr
+                                  fetch_input_tuple
+                                  ExecAgg
+                                  ExecProcNodeInstr
+                                  standard_ExecutorRun
+                                  ExecutorRun
+                                  ExplainOnePlan
+                                  ExplainOneQuery
+                                  ExplainQuery
+                                  standard_ProcessUtility
+                                  ProcessUtility
+                                  PortalRunUtility
+                                  FillPortalStore
+                                  PortalRun
+                                  exec_simple_query
+                                  PostgresMain
+                                  ServerLoop
+                                  PostmasterMain
+                                  main
+                                  __libc_start_main
+
+    12.40%  [.] GetScanItems
+            |
+            ---ivfflatgettuple
+               index_getnext_tid
+               index_getnext
+               IndexNextWithReorder
+               ExecScan
+               ExecProcNodeInstr
+               ExecLimit
+               ExecProcNodeInstr
+               ExecNestLoop
+               ExecProcNodeInstr
+               fetch_input_tuple
+               ExecAgg
+               ExecProcNodeInstr
+               standard_ExecutorRun
+               ExecutorRun
+               ExplainOnePlan
+               ExplainOneQuery
+               ExplainQuery
+               standard_ProcessUtility
+               ProcessUtility
+               PortalRunUtility
+               FillPortalStore
+               PortalRun
+               exec_simple_query
+               PostgresMain
+               ServerLoop
+               PostmasterMain
+               main
+               __libc_start_main
+
+     7.44%  [.] qsort_ssup
+            |          
+            |--6.32%--qsort_ssup
+            |          |          
+            |          |--5.15%--qsort_ssup
+            |          |          |          
+            |          |          |--3.57%--qsort_ssup
+            |          |          |          |          
+            |          |          |          |--2.29%--qsort_ssup
+            |          |          |          |          |          
+            |          |          |          |          |--1.17%--qsort_ssup
+            |          |          |          |          |          |          
+            |          |          |          |          |           --0.89%--dumptuples
+            |          |          |          |          |                     tuplesort_puttupleslot
+            |          |          |          |          |                     GetScanItems
+            |          |          |          |          |                     ivfflatgettuple
+            |          |          |          |          |                     index_getnext_tid
+            |          |          |          |          |                     index_getnext
+            |          |          |          |          |                     IndexNextWithReorder
+            |          |          |          |          |                     ExecScan
+            |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |                     ExecLimit
+            |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |                     ExecNestLoop
+            |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |                     fetch_input_tuple
+            |          |          |          |          |                     ExecAgg
+            |          |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |          |                     standard_ExecutorRun
+            |          |          |          |          |                     ExecutorRun
+            |          |          |          |          |                     ExplainOnePlan
+            |          |          |          |          |                     ExplainOneQuery
+            |          |          |          |          |                     ExplainQuery
+            |          |          |          |          |                     standard_ProcessUtility
+            |          |          |          |          |                     ProcessUtility
+            |          |          |          |          |                     PortalRunUtility
+            |          |          |          |          |                     FillPortalStore
+            |          |          |          |          |                     PortalRun
+            |          |          |          |          |                     exec_simple_query
+            |          |          |          |          |                     PostgresMain
+            |          |          |          |          |                     ServerLoop
+            |          |          |          |          |                     PostmasterMain
+            |          |          |          |          |                     main
+            |          |          |          |          |                     __libc_start_main
+            |          |          |          |          |          
+            |          |          |          |           --1.11%--dumptuples
+            |          |          |          |                     tuplesort_puttupleslot
+            |          |          |          |                     GetScanItems
+            |          |          |          |                     ivfflatgettuple
+            |          |          |          |                     index_getnext_tid
+            |          |          |          |                     index_getnext
+            |          |          |          |                     IndexNextWithReorder
+            |          |          |          |                     ExecScan
+            |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |                     ExecLimit
+            |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |                     ExecNestLoop
+            |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |                     fetch_input_tuple
+            |          |          |          |                     ExecAgg
+            |          |          |          |                     ExecProcNodeInstr
+            |          |          |          |                     standard_ExecutorRun
+            |          |          |          |                     ExecutorRun
+            |          |          |          |                     ExplainOnePlan
+            |          |          |          |                     ExplainOneQuery
+            |          |          |          |                     ExplainQuery
+            |          |          |          |                     standard_ProcessUtility
+            |          |          |          |                     ProcessUtility
+            |          |          |          |                     PortalRunUtility
+            |          |          |          |                     FillPortalStore
+            |          |          |          |                     PortalRun
+            |          |          |          |                     exec_simple_query
+            |          |          |          |                     PostgresMain
+            |          |          |          |                     ServerLoop
+            |          |          |          |                     PostmasterMain
+            |          |          |          |                     main
+            |          |          |          |                     __libc_start_main
+            |          |          |          |          
+            |          |          |           --1.29%--dumptuples
+            |          |          |                     |          
+            |          |          |                      --1.18%--tuplesort_puttupleslot
+            |          |          |                                GetScanItems
+            |          |          |                                ivfflatgettuple
+            |          |          |                                index_getnext_tid
+            |          |          |                                index_getnext
+            |          |          |                                IndexNextWithReorder
+            |          |          |                                ExecScan
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                ExecLimit
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                ExecNestLoop
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                fetch_input_tuple
+            |          |          |                                ExecAgg
+            |          |          |                                ExecProcNodeInstr
+            |          |          |                                standard_ExecutorRun
+            |          |          |                                ExecutorRun
+            |          |          |                                ExplainOnePlan
+            |          |          |                                ExplainOneQuery
+            |          |          |                                ExplainQuery
+            |          |          |                                standard_ProcessUtility
+            |          |          |                                ProcessUtility
+            |          |          |                                PortalRunUtility
+            |          |          |                                FillPortalStore
+            |          |          |                                PortalRun
+            |          |          |                                exec_simple_query
+            |          |          |                                PostgresMain
+            |          |          |                                ServerLoop
+            |          |          |                                PostmasterMain
+            |          |          |                                main
+            |          |          |                                __libc_start_main
+            |          |          |          
+            |          |           --1.58%--dumptuples
+            |          |                     |          
+            |          |                      --1.46%--tuplesort_puttupleslot
+            |          |                                GetScanItems
+            |          |                                ivfflatgettuple
+            |          |                                index_getnext_tid
+            |          |                                index_getnext
+            |          |                                IndexNextWithReorder
+            |          |                                ExecScan
+            |          |                                ExecProcNodeInstr
+            |          |                                ExecLimit
+            |          |                                ExecProcNodeInstr
+            |          |                                ExecNestLoop
+            |          |                                ExecProcNodeInstr
+            |          |                                fetch_input_tuple
+            |          |                                ExecAgg
+            |          |                                ExecProcNodeInstr
+            |          |                                standard_ExecutorRun
+            |          |                                ExecutorRun
+            |          |                                ExplainOnePlan
+            |          |                                ExplainOneQuery
+            |          |                                ExplainQuery
+            |          |                                standard_ProcessUtility
+            |          |                                ProcessUtility
+            |          |                                PortalRunUtility
+            |          |                                FillPortalStore
+            |          |                                PortalRun
+            |          |                                exec_simple_query
+            |          |                                PostgresMain
+            |          |                                ServerLoop
+            |          |                                PostmasterMain
+            |          |                                main
+            |          |                                __libc_start_main
+            |          |          
+            |           --1.17%--dumptuples
+            |                     tuplesort_puttupleslot
+            |                     GetScanItems
+            |                     ivfflatgettuple
+            |                     index_getnext_tid
+            |                     index_getnext
+            |                     IndexNextWithReorder
+            |                     ExecScan
+            |                     ExecProcNodeInstr
+            |                     ExecLimit
+            |                     ExecProcNodeInstr
+            |                     ExecNestLoop
+            |                     ExecProcNodeInstr
+            |                     fetch_input_tuple
+            |                     ExecAgg
+            |                     ExecProcNodeInstr
+            |                     standard_ExecutorRun
+            |                     ExecutorRun
+            |                     ExplainOnePlan
+            |                     ExplainOneQuery
+            |                     ExplainQuery
+            |                     standard_ProcessUtility
+            |                     ProcessUtility
+            |                     PortalRunUtility
+            |                     FillPortalStore
+            |                     PortalRun
+            |                     exec_simple_query
+            |                     PostgresMain
+            |                     ServerLoop
+            |                     PostmasterMain
+            |                     main
+            |                     __libc_start_main
+            |          
+             --1.11%--dumptuples
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     5.96%  [.] writetup_heap
+            |
+            ---dumptuples
+               |          
+                --5.85%--tuplesort_puttupleslot
+                          GetScanItems
+                          ivfflatgettuple
+                          index_getnext_tid
+                          index_getnext
+                          IndexNextWithReorder
+                          ExecScan
+                          ExecProcNodeInstr
+                          ExecLimit
+                          ExecProcNodeInstr
+                          ExecNestLoop
+                          ExecProcNodeInstr
+                          fetch_input_tuple
+                          ExecAgg
+                          ExecProcNodeInstr
+                          standard_ExecutorRun
+                          ExecutorRun
+                          ExplainOnePlan
+                          ExplainOneQuery
+                          ExplainQuery
+                          standard_ProcessUtility
+                          ProcessUtility
+                          PortalRunUtility
+                          FillPortalStore
+                          PortalRun
+                          exec_simple_query
+                          PostgresMain
+                          ServerLoop
+                          PostmasterMain
+                          main
+                          __libc_start_main
+
+     4.08%  [.] __isnan
+            |
+            ---qsort_ssup
+               |          
+               |--3.41%--qsort_ssup
+               |          |          
+               |          |--2.68%--qsort_ssup
+               |          |          |          
+               |          |          |--2.01%--qsort_ssup
+               |          |          |          |          
+               |          |          |          |--1.28%--qsort_ssup
+               |          |          |          |          |          
+               |          |          |          |           --0.89%--qsort_ssup
+               |          |          |          |          
+               |          |          |           --0.73%--dumptuples
+               |          |          |                     |          
+               |          |          |                      --0.67%--tuplesort_puttupleslot
+               |          |          |                                GetScanItems
+               |          |          |                                ivfflatgettuple
+               |          |          |                                index_getnext_tid
+               |          |          |                                index_getnext
+               |          |          |                                IndexNextWithReorder
+               |          |          |                                ExecScan
+               |          |          |                                ExecProcNodeInstr
+               |          |          |                                ExecLimit
+               |          |          |                                ExecProcNodeInstr
+               |          |          |                                ExecNestLoop
+               |          |          |                                ExecProcNodeInstr
+               |          |          |                                fetch_input_tuple
+               |          |          |                                ExecAgg
+               |          |          |                                ExecProcNodeInstr
+               |          |          |                                standard_ExecutorRun
+               |          |          |                                ExecutorRun
+               |          |          |                                ExplainOnePlan
+               |          |          |                                ExplainOneQuery
+               |          |          |                                ExplainQuery
+               |          |          |                                standard_ProcessUtility
+               |          |          |                                ProcessUtility
+               |          |          |                                PortalRunUtility
+               |          |          |                                FillPortalStore
+               |          |          |                                PortalRun
+               |          |          |                                exec_simple_query
+               |          |          |                                PostgresMain
+               |          |          |                                ServerLoop
+               |          |          |                                PostmasterMain
+               |          |          |                                main
+               |          |          |                                __libc_start_main
+               |          |          |          
+               |          |           --0.67%--dumptuples
+               |          |                     tuplesort_puttupleslot
+               |          |                     GetScanItems
+               |          |                     ivfflatgettuple
+               |          |                     index_getnext_tid
+               |          |                     index_getnext
+               |          |                     IndexNextWithReorder
+               |          |                     ExecScan
+               |          |                     ExecProcNodeInstr
+               |          |                     ExecLimit
+               |          |                     ExecProcNodeInstr
+               |          |                     ExecNestLoop
+               |          |                     ExecProcNodeInstr
+               |          |                     fetch_input_tuple
+               |          |                     ExecAgg
+               |          |                     ExecProcNodeInstr
+               |          |                     standard_ExecutorRun
+               |          |                     ExecutorRun
+               |          |                     ExplainOnePlan
+               |          |                     ExplainOneQuery
+               |          |                     ExplainQuery
+               |          |                     standard_ProcessUtility
+               |          |                     ProcessUtility
+               |          |                     PortalRunUtility
+               |          |                     FillPortalStore
+               |          |                     PortalRun
+               |          |                     exec_simple_query
+               |          |                     PostgresMain
+               |          |                     ServerLoop
+               |          |                     PostmasterMain
+               |          |                     main
+               |          |                     __libc_start_main
+               |          |          
+               |           --0.72%--dumptuples
+               |                     tuplesort_puttupleslot
+               |                     GetScanItems
+               |                     ivfflatgettuple
+               |                     index_getnext_tid
+               |                     index_getnext
+               |                     IndexNextWithReorder
+               |                     ExecScan
+               |                     ExecProcNodeInstr
+               |                     ExecLimit
+               |                     ExecProcNodeInstr
+               |                     ExecNestLoop
+               |                     ExecProcNodeInstr
+               |                     fetch_input_tuple
+               |                     ExecAgg
+               |                     ExecProcNodeInstr
+               |                     standard_ExecutorRun
+               |                     ExecutorRun
+               |                     ExplainOnePlan
+               |                     ExplainOneQuery
+               |                     ExplainQuery
+               |                     standard_ProcessUtility
+               |                     ProcessUtility
+               |                     PortalRunUtility
+               |                     FillPortalStore
+               |                     PortalRun
+               |                     exec_simple_query
+               |                     PostgresMain
+               |                     ServerLoop
+               |                     PostmasterMain
+               |                     main
+               |                     __libc_start_main
+               |          
+                --0.67%--dumptuples
+                          |          
+                           --0.62%--tuplesort_puttupleslot
+                                     GetScanItems
+                                     ivfflatgettuple
+                                     index_getnext_tid
+                                     index_getnext
+                                     IndexNextWithReorder
+                                     ExecScan
+                                     ExecProcNodeInstr
+                                     ExecLimit
+                                     ExecProcNodeInstr
+                                     ExecNestLoop
+                                     ExecProcNodeInstr
+                                     fetch_input_tuple
+                                     ExecAgg
+                                     ExecProcNodeInstr
+                                     standard_ExecutorRun
+                                     ExecutorRun
+                                     ExplainOnePlan
+                                     ExplainOneQuery
+                                     ExplainQuery
+                                     standard_ProcessUtility
+                                     ProcessUtility
+                                     PortalRunUtility
+                                     FillPortalStore
+                                     PortalRun
+                                     exec_simple_query
+                                     PostgresMain
+                                     ServerLoop
+                                     PostmasterMain
+                                     main
+                                     __libc_start_main
+
+     2.85%  [.] copytup_heap
+            |          
+             --2.62%--tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     1.95%  [.] __memcpy_ssse3
+            |          
+             --1.29%--writetup_heap
+                       dumptuples
+                       |          
+                        --1.17%--tuplesort_puttupleslot
+                                  GetScanItems
+                                  ivfflatgettuple
+                                  index_getnext_tid
+                                  index_getnext
+                                  IndexNextWithReorder
+                                  ExecScan
+                                  ExecProcNodeInstr
+                                  ExecLimit
+                                  ExecProcNodeInstr
+                                  ExecNestLoop
+                                  ExecProcNodeInstr
+                                  fetch_input_tuple
+                                  ExecAgg
+                                  ExecProcNodeInstr
+                                  standard_ExecutorRun
+                                  ExecutorRun
+                                  ExplainOnePlan
+                                  ExplainOneQuery
+                                  ExplainQuery
+                                  standard_ProcessUtility
+                                  ProcessUtility
+                                  PortalRunUtility
+                                  FillPortalStore
+                                  PortalRun
+                                  exec_simple_query
+                                  PostgresMain
+                                  ServerLoop
+                                  PostmasterMain
+                                  main
+                                  __libc_start_main
+
+     1.74%  [.] AllocSetAlloc
+            |          
+            |--1.12%--palloc0_internal
+            |          heap_form_minimal_tuple
+            |          ExecCopySlotMinimalTuple
+            |          copytup_heap
+            |          tuplesort_puttupleslot
+            |          GetScanItems
+            |          ivfflatgettuple
+            |          index_getnext_tid
+            |          index_getnext
+            |          IndexNextWithReorder
+            |          ExecScan
+            |          ExecProcNodeInstr
+            |          ExecLimit
+            |          ExecProcNodeInstr
+            |          ExecNestLoop
+            |          ExecProcNodeInstr
+            |          fetch_input_tuple
+            |          ExecAgg
+            |          ExecProcNodeInstr
+            |          standard_ExecutorRun
+            |          ExecutorRun
+            |          ExplainOnePlan
+            |          ExplainOneQuery
+            |          ExplainQuery
+            |          standard_ProcessUtility
+            |          ProcessUtility
+            |          PortalRunUtility
+            |          FillPortalStore
+            |          PortalRun
+            |          exec_simple_query
+            |          PostgresMain
+            |          ServerLoop
+            |          PostmasterMain
+            |          main
+            |          __libc_start_main
+            |          
+             --0.61%--heap_form_minimal_tuple
+                       ExecCopySlotMinimalTuple
+                       copytup_heap
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     1.67%  [.] buf_hash_operate
+            |
+            ---BufTableLookup
+               ReadBuffer_common.constprop.0
+               ReadBufferExtended
+               |          
+                --1.56%--GetScanItems
+                          ivfflatgettuple
+                          index_getnext_tid
+                          index_getnext
+                          IndexNextWithReorder
+                          ExecScan
+                          ExecProcNodeInstr
+                          ExecLimit
+                          ExecProcNodeInstr
+                          ExecNestLoop
+                          ExecProcNodeInstr
+                          fetch_input_tuple
+                          ExecAgg
+                          ExecProcNodeInstr
+                          standard_ExecutorRun
+                          ExecutorRun
+                          ExplainOnePlan
+                          ExplainOneQuery
+                          ExplainQuery
+                          standard_ProcessUtility
+                          ProcessUtility
+                          PortalRunUtility
+                          FillPortalStore
+                          PortalRun
+                          exec_simple_query
+                          PostgresMain
+                          ServerLoop
+                          PostmasterMain
+                          main
+                          __libc_start_main
+
+     1.62%  [.] fill_val
+            |          
+             --1.34%--heap_fill_tuple
+                       heap_form_minimal_tuple
+                       ExecCopySlotMinimalTuple
+                       copytup_heap
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     1.33%  [.] heap_compute_data_size
+            |          
+             --1.28%--heap_form_minimal_tuple
+                       ExecCopySlotMinimalTuple
+                       copytup_heap
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     1.28%  [.] heap_form_minimal_tuple
+            |          
+             --1.17%--ExecCopySlotMinimalTuple
+                       copytup_heap
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     1.18%  [.] __isnan@plt
+            |          
+             --1.12%--qsort_ssup
+                       |          
+                        --0.95%--qsort_ssup
+                                  |          
+                                   --0.73%--qsort_ssup
+                                             |          
+                                              --0.56%--qsort_ssup
+
+     1.12%  [.] heap_fill_tuple
+            |
+            ---heap_form_minimal_tuple
+               ExecCopySlotMinimalTuple
+               copytup_heap
+               tuplesort_puttupleslot
+               GetScanItems
+               ivfflatgettuple
+               index_getnext_tid
+               index_getnext
+               IndexNextWithReorder
+               ExecScan
+               ExecProcNodeInstr
+               ExecLimit
+               ExecProcNodeInstr
+               ExecNestLoop
+               ExecProcNodeInstr
+               fetch_input_tuple
+               ExecAgg
+               ExecProcNodeInstr
+               standard_ExecutorRun
+               ExecutorRun
+               ExplainOnePlan
+               ExplainOneQuery
+               ExplainQuery
+               standard_ProcessUtility
+               ProcessUtility
+               PortalRunUtility
+               FillPortalStore
+               PortalRun
+               exec_simple_query
+               PostgresMain
+               ServerLoop
+               PostmasterMain
+               main
+               __libc_start_main
+
+     1.06%  [.] AllocSetFree
+            |          
+             --0.83%--writetup_heap
+                       dumptuples
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     0.95%  [.] palloc0_internal
+            |
+            ---heap_form_minimal_tuple
+               ExecCopySlotMinimalTuple
+               copytup_heap
+               tuplesort_puttupleslot
+               GetScanItems
+               ivfflatgettuple
+               index_getnext_tid
+               index_getnext
+               IndexNextWithReorder
+               ExecScan
+               ExecProcNodeInstr
+               ExecLimit
+               ExecProcNodeInstr
+               ExecNestLoop
+               ExecProcNodeInstr
+               fetch_input_tuple
+               ExecAgg
+               ExecProcNodeInstr
+               standard_ExecutorRun
+               ExecutorRun
+               ExplainOnePlan
+               ExplainOneQuery
+               ExplainQuery
+               standard_ProcessUtility
+               ProcessUtility
+               PortalRunUtility
+               FillPortalStore
+               PortalRun
+               exec_simple_query
+               PostgresMain
+               ServerLoop
+               PostmasterMain
+               main
+               __libc_start_main
+
+     0.95%  [.] LogicalTapeWrite
+            |          
+             --0.84%--writetup_heap
+                       dumptuples
+                       |          
+                        --0.78%--tuplesort_puttupleslot
+                                  GetScanItems
+                                  ivfflatgettuple
+                                  index_getnext_tid
+                                  index_getnext
+                                  IndexNextWithReorder
+                                  ExecScan
+                                  ExecProcNodeInstr
+                                  ExecLimit
+                                  ExecProcNodeInstr
+                                  ExecNestLoop
+                                  ExecProcNodeInstr
+                                  fetch_input_tuple
+                                  ExecAgg
+                                  ExecProcNodeInstr
+                                  standard_ExecutorRun
+                                  ExecutorRun
+                                  ExplainOnePlan
+                                  ExplainOneQuery
+                                  ExplainQuery
+                                  standard_ProcessUtility
+                                  ProcessUtility
+                                  PortalRunUtility
+                                  FillPortalStore
+                                  PortalRun
+                                  exec_simple_query
+                                  PostgresMain
+                                  ServerLoop
+                                  PostmasterMain
+                                  main
+                                  __libc_start_main
+
+     0.90%  [.] MemCxtShouldTrack
+            |          
+             --0.62%--RemoveMemoryAllocInfo
+                       AllocSetFree
+                       writetup_heap
+                       dumptuples
+                       |          
+                        --0.56%--tuplesort_puttupleslot
+                                  GetScanItems
+                                  ivfflatgettuple
+                                  index_getnext_tid
+                                  index_getnext
+                                  IndexNextWithReorder
+                                  ExecScan
+                                  ExecProcNodeInstr
+                                  ExecLimit
+                                  ExecProcNodeInstr
+                                  ExecNestLoop
+                                  ExecProcNodeInstr
+                                  fetch_input_tuple
+                                  ExecAgg
+                                  ExecProcNodeInstr
+                                  standard_ExecutorRun
+                                  ExecutorRun
+                                  ExplainOnePlan
+                                  ExplainOneQuery
+                                  ExplainQuery
+                                  standard_ProcessUtility
+                                  ProcessUtility
+                                  PortalRunUtility
+                                  FillPortalStore
+                                  PortalRun
+                                  exec_simple_query
+                                  PostgresMain
+                                  ServerLoop
+                                  PostmasterMain
+                                  main
+                                  __libc_start_main
+
+     0.73%  [.] puttuple_common
+            |          
+             --0.67%--tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     0.73%  [k] copy_user_generic_string
+     0.62%  [.] pg_detoast_datum
+            |
+            ---FunctionCall2Coll
+               |          
+                --0.56%--GetScanItems
+                          ivfflatgettuple
+                          index_getnext_tid
+                          index_getnext
+                          IndexNextWithReorder
+                          ExecScan
+                          ExecProcNodeInstr
+                          ExecLimit
+                          ExecProcNodeInstr
+                          ExecNestLoop
+                          ExecProcNodeInstr
+                          fetch_input_tuple
+                          ExecAgg
+                          ExecProcNodeInstr
+                          standard_ExecutorRun
+                          ExecutorRun
+                          ExplainOnePlan
+                          ExplainOneQuery
+                          ExplainQuery
+                          standard_ProcessUtility
+                          ProcessUtility
+                          PortalRunUtility
+                          FillPortalStore
+                          PortalRun
+                          exec_simple_query
+                          PostgresMain
+                          ServerLoop
+                          PostmasterMain
+                          main
+                          __libc_start_main
+
+     0.61%  [.] ExecCopySlotMinimalTuple
+            |          
+             --0.56%--copytup_heap
+                       tuplesort_puttupleslot
+                       GetScanItems
+                       ivfflatgettuple
+                       index_getnext_tid
+                       index_getnext
+                       IndexNextWithReorder
+                       ExecScan
+                       ExecProcNodeInstr
+                       ExecLimit
+                       ExecProcNodeInstr
+                       ExecNestLoop
+                       ExecProcNodeInstr
+                       fetch_input_tuple
+                       ExecAgg
+                       ExecProcNodeInstr
+                       standard_ExecutorRun
+                       ExecutorRun
+                       ExplainOnePlan
+                       ExplainOneQuery
+                       ExplainQuery
+                       standard_ProcessUtility
+                       ProcessUtility
+                       PortalRunUtility
+                       FillPortalStore
+                       PortalRun
+                       exec_simple_query
+                       PostgresMain
+                       ServerLoop
+                       PostmasterMain
+                       main
+                       __libc_start_main
+
+     0.56%  [k] async_page_fault
+     0.56%  [k] clear_page_c
+            |
+            ---__alloc_pages_nodemask
+               alloc_pages_vma
+               handle_mm_fault
+               __do_page_fault
+               trace_do_page_fault
+               do_async_page_fault
+               async_page_fault
+
+     0.51%  [.] tuplesort_puttupleslot
+     0.50%  [.] RemoveMemoryAllocInfo
+            |
+            ---AllocSetFree
+               writetup_heap
+               dumptuples
+
+     0.45%  [.] __memset_sse2
+     0.45%  [.] FunctionCall2Coll
+     0.44%  [.] AllocSetGetChunkSpace
+     0.44%  [.] ExecClearTuple
+     0.34%  [.] InsertMemoryAllocInfo
+     0.34%  [.] dumptuples
+     0.34%  [.] pfree
+     0.28%  [.] PinBuffer
+     0.28%  [.] GetMemoryChunkSpace
+     0.28%  [k] __mem_cgroup_commit_charge
+     0.26%  [k] lookup_page_cgroup
+     0.22%  [.] MemoryContextReset
+     0.22%  [k] unmap_page_range
+     0.22%  [k] release_pages
+     0.22%  [.] ExecStoreVirtualTuple
+     0.17%  [k] free_pcppages_bulk
+     0.17%  [k] iomap_write_actor
+     0.17%  [.] __memcpy_sse2
+     0.17%  [k] block_invalidatepage_range
+     0.17%  [k] get_pageblock_flags_group
+     0.16%  [.] LWLockAcquire
+     0.11%  [.] LWLockAttemptLock
+     0.11%  [k] mem_cgroup_page_lruvec
+     0.11%  [k] ___slab_alloc
+     0.11%  [k] __mem_cgroup_uncharge_common
+     0.11%  [k] get_page_from_freelist
+     0.11%  [k] _raw_spin_lock_irqsave
+     0.11%  [.] LWLockRelease
+     0.11%  [.] med3_ssup
+     0.06%  [k] selinux_file_permission
+     0.06%  [k] _raw_spin_unlock_irqrestore
+     0.06%  [k] cancel_dirty_page
+     0.06%  [k] __activate_page
+     0.06%  [k] touch_atime
+     0.06%  [.] BufFileWrite
+     0.06%  [k] __list_del_entry
+     0.06%  [.] ResourceArrayRemove
+     0.06%  [k] error_swapgs
+     0.06%  [k] do_last
+     0.06%  [k] __raw_callee_save___pv_queued_spin_unlock
+     0.06%  [k] sys_read
+     0.06%  [.] ivfflatgettuple
+     0.06%  [.] ResourceOwnerForgetBuffer
+     0.06%  [k] put_page
+     0.06%  [.] GetPrivateRefCountEntry
+     0.06%  [k] do_async_page_fault
+     0.06%  [k] mark_buffer_dirty
+     0.06%  [.] FileWrite
+     0.06%  [k] kmem_cache_alloc
+     0.06%  [k] rw_verify_area
+     0.06%  [k] next_zones_zonelist
+     0.06%  [k] do_sync_read
+     0.06%  [k] pvclock_clocksource_read
+     0.06%  [k] _raw_qspin_lock_irq
+     0.06%  [k] xfs_file_iomap_begin
+     0.06%  [k] __mem_cgroup_count_vm_event
+     0.06%  [.] FileRead
+     0.06%  [k] __fsnotify_parent
+     0.06%  [k] x86_pmu_disable
+     0.06%  [k] kvm_clock_get_cycles
+     0.06%  [k] __fget_light
+     0.06%  [k] xfs_file_buffered_aio_write
+     0.06%  [k] native_write_msr_safe
+     0.06%  [k] __memcpy
+     0.06%  [k] system_call_after_swapgs
+     0.06%  [k] xfs_file_aio_read
+     0.06%  [k] __alloc_pages_nodemask
+     0.06%  [k] native_read_msr_safe
+     0.06%  [k] unlock_page
+     0.06%  [.] UpdateWorkFileSize
+     0.06%  [k] down_read
+     0.05%  [.] CompareLists
+     0.05%  [k] _raw_qspin_lock
+     0.05%  [k] page_waitqueue
+     0.05%  [k] get_task_policy.part.26
+     0.05%  [.] memcpy@plt
+     0.05%  [k] pagevec_lru_move_fn
+     0.05%  [.] InitScanSortState
+     0.05%  [.] ReadBuffer_common.constprop.0
+     0.05%  [k] __wake_up_bit
+     0.05%  [k] avtab_search
+     0.00%  [k] radix_tree_descend
+
+
+#
+# (Tip: Compare performance results with: perf diff [<old file> <new file>])
+#

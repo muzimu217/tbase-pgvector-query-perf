@@ -1,0 +1,41 @@
+Pager usage is off.
+ vector_version 
+----------------
+ 0.8.0
+(1 row)
+
+SET
+SET
+SET
+Output format is unaligned.
+Output format is aligned.
+ pg_sleep 
+----------
+ 
+(1 row)
+
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=47.479..47.479 rows=1 loops=1)
+   Buffers: shared hit=8206
+   ->  Nested Loop (actual time=0.180..47.114 rows=1000 loops=1)
+         Buffers: shared hit=8206
+         ->  Seq Scan on rescan_queries q (actual time=0.010..0.565 rows=1000 loops=1)
+               Buffers: shared hit=72
+         ->  Limit (actual time=0.046..0.046 rows=1 loops=1000)
+               Buffers: shared hit=8134
+               ->  Index Scan using rescan_items_ivfflat_idx on rescan_items i (actual time=0.045..0.045 rows=1 loops=1000)
+                     Order By: (embedding <=> q.embedding)
+                     Buffers: shared hit=8134
+ Planning:
+   Buffers: shared hit=128
+ Planning Time: 3.721 ms
+ Query Memory: execution query_mem 3MB
+ Execution Time: 47.710 ms
+(16 rows)
+
+ pg_sleep 
+----------
+ 
+(1 row)
+

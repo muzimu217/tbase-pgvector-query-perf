@@ -1,0 +1,18 @@
+Pager usage is off.
+psql:/tmp/tmp.zBH86CS0Xp/setup.sql:4: NOTICE:  (42710) extension "vector" already exists, skipping
+CREATE EXTENSION
+psql:/tmp/tmp.zBH86CS0Xp/setup.sql:6: NOTICE:  (00000) table "rescan_queries" does not exist, skipping
+DROP TABLE
+psql:/tmp/tmp.zBH86CS0Xp/setup.sql:7: NOTICE:  (00000) table "rescan_items" does not exist, skipping
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+COPY 1000
+COPY 1000
+psql:/tmp/tmp.zBH86CS0Xp/setup.sql:25: NOTICE:  (00000) ivfflat index created with little data
+DETAIL:  This will cause low recall.
+HINT:  Drop the index until the table has more data.
+CREATE INDEX
+ANALYZE
+ANALYZE
+DROP TABLE

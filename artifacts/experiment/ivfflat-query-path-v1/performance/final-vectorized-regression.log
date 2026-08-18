@@ -1,0 +1,38 @@
+make -C ../../src/test/regress pg_regress
+make[1]: Entering directory `/opt/opentenbase/src/OpenTenBase/src/test/regress'
+make -C ../../../src/port all
+make[2]: Entering directory `/opt/opentenbase/src/OpenTenBase/src/port'
+make -C ../backend submake-errcodes
+make[3]: Entering directory `/opt/opentenbase/src/OpenTenBase/src/backend'
+make[3]: Nothing to be done for `submake-errcodes'.
+make[3]: Leaving directory `/opt/opentenbase/src/OpenTenBase/src/backend'
+make[2]: Leaving directory `/opt/opentenbase/src/OpenTenBase/src/port'
+make -C ../../../src/common all
+make[2]: Entering directory `/opt/opentenbase/src/OpenTenBase/src/common'
+make -C ../backend submake-errcodes
+make[3]: Entering directory `/opt/opentenbase/src/OpenTenBase/src/backend'
+make[3]: Nothing to be done for `submake-errcodes'.
+make[3]: Leaving directory `/opt/opentenbase/src/OpenTenBase/src/backend'
+make[2]: Leaving directory `/opt/opentenbase/src/OpenTenBase/src/common'
+make[1]: Leaving directory `/opt/opentenbase/src/OpenTenBase/src/test/regress'
+../../src/test/regress/pg_regress --inputdir=. --bindir='/opt/opentenbase/install/bin'    --inputdir=test --load-extension=vector --dbname=contrib_regression ivfflat_vector
+============== ************* get_env_port set local port from env ************ ==============
+(using postmaster on 127.0.0.1, port 22201)
+============== dropping database "contrib_regression" ==============
+DROP DATABASE
+DROP DATABASE
+============== creating database "contrib_regression" ==============
+CREATE DATABASE
+CREATE DATABASE
+ALTER DATABASE
+ALTER DATABASE
+============== installing vector                      ==============
+CREATE EXTENSION
+CREATE EXTENSION
+============== running regression test queries        ==============
+test ivfflat_vector           ... ok
+
+=====================
+ All 1 tests passed. 
+=====================
+

@@ -1,0 +1,34 @@
+diff --git a/contrib/pgvector/bench/ivfflat_rescan_setup.sql b/contrib/pgvector/bench/ivfflat_rescan_setup.sql
+new file mode 100644
+index 0000000..362c472
+--- /dev/null
++++ b/contrib/pgvector/bench/ivfflat_rescan_setup.sql
+@@ -0,0 +1,28 @@
++\set ON_ERROR_STOP on
++\pset pager off
++
++CREATE EXTENSION IF NOT EXISTS vector;
++
++DROP TABLE IF EXISTS rescan_queries;
++DROP TABLE IF EXISTS rescan_items;
++
++CREATE TABLE rescan_items (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++) DISTRIBUTE BY REPLICATION;
++
++CREATE TABLE rescan_queries (
++    id integer PRIMARY KEY,
++    embedding vector(__DIMS__)
++) DISTRIBUTE BY REPLICATION;
++
++\copy rescan_items(id, embedding) FROM '__ITEMS_FILE__' WITH (FORMAT csv)
++\copy rescan_queries(id, embedding) FROM '__QUERIES_FILE__' WITH (FORMAT csv)
++
++CREATE INDEX rescan_items_ivfflat_idx
++ON rescan_items
++USING ivfflat (embedding vector_cosine_ops)
++WITH (lists = __LISTS__);
++
++ANALYZE rescan_items;
++ANALYZE rescan_queries;
