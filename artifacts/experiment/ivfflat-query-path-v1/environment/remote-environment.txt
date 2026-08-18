@@ -1,4 +1,4 @@
-Host: 45.202.199.140
+Host: <dev-server> (redacted)
 Kernel: Linux 3.10.0-1160.80.1.el7.x86_64 x86_64
 CPU: 4 x QEMU Virtual CPU version 2.5+, 1 thread/core
 Memory: 3.7 GiB RAM, 2.0 GiB swap
