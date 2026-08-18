@@ -23,7 +23,7 @@
 docs/pgvector-performance-development-report.md
 docs/pgvector-optimization-roadmap-engineering-plan.md
 docs/benchmark-data/
-docs/figures/
+report/appendix/legacy-figures/  (legacy connectivity-only figures)
 patches/pgvector-ivfflat-benchmark-tools.patch
 patches/0001-ivfflat-query-path-optimization.patch
 patches/series/

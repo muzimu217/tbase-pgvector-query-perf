@@ -24,7 +24,7 @@
 - [ ] `docs/pgvector-performance-development-report.md` → `03-技术文档/开发实现说明.md`（顶部加数据有效性声明，T1.0.1）
 - [ ] `docs/pgvector-optimization-roadmap-engineering-plan.md` → 归档或并入设计文档（避免与 T001 路线图重复）
 - [ ] `docs/benchmark-data/` → `04-数据与图表/benchmark-data/`（旧数据保留但标注"仅工程连通性验证"）
-- [ ] `docs/figures/` → `04-数据与图表/figures/`
+- [x] 旧图已隔离至 `report/appendix/legacy-figures/`（仅工程连通性验证，正文不引用）
 
 ## 汇报交付物
 
